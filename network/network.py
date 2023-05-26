@@ -1,7 +1,7 @@
-from typing import List, Dict
+from typing import Dict
 
-from web3 import HTTPProvider, Web3
 import web3.exceptions
+from web3 import HTTPProvider, Web3
 
 from abi import ERC20_ABI, STARGATE_ROUTER_ABI
 from base.errors import NotSupported
@@ -137,7 +137,7 @@ class EVMNetwork(Network):
         return quote_data[0]
 
     def make_stargate_swap(self, private_key: str, dst_chain_id: int, src_pool_id: int, dst_pool_id: int, amount: int,
-                           min_received_amount: int) -> bool:
+                           min_received_amount: int, fast_gas: bool = False) -> bool:
         """ Method that swaps src_pool_id token from current chain to dst_chain_id """
 
         account = self.w3.eth.account.from_key(private_key)
@@ -147,7 +147,7 @@ class EVMNetwork(Network):
 
         layerzero_fee = self.estimate_layerzero_swap_fee(dst_chain_id, account.address)
         nonce = self.get_nonce(account.address)
-        gas_price = self.get_current_gas()
+        gas_price = int(self.get_current_gas() * 1.2) if fast_gas else self.get_current_gas()
 
         print(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas price: {gas_price}')
 

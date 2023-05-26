@@ -1,5 +1,6 @@
-from network import EVMNetwork, Stablecoin
 from base.errors import StablecoinNotSupportedByChain
+from network.network import EVMNetwork
+from network.stablecoin import Stablecoin
 
 
 class BalanceHelper:

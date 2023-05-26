@@ -1,6 +1,6 @@
-from network import EVMNetwork
-from network.stablecoin import Stablecoin
+from network.network import EVMNetwork
 from network.avalanche.constants import AvalancheConstants
+from network.stablecoin import Stablecoin
 from stargate import StargateConstants
 
 

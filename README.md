@@ -7,6 +7,7 @@
 - Bridge via Stargate 
 - Complete randomization of paths and timings. No patterns
 - Simultaneous operation of multiple accounts in different threads
+- Automatic refuel from the Okex exchange (withdraw of the native token to pay gas)
 ### Usage
 1. Install Python 3.9.2 (another version is possible, but I can't vouch for it)
 2. Go to the directory with the repository (you will probably have a different path):

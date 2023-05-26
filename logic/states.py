@@ -1,14 +1,16 @@
-import time
-import random
 import datetime
+import random
+import time
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 
-from base.errors import ConfigurationError, StablecoinNotSupportedByChain
+from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
+from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD
+from config import SUPPORTED_NETWORKS, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, RefuelMode
 from network import EVMNetwork, Stablecoin
-from stargate.bridge import BridgeHelper
-from config import SUPPORTED_NETWORKS, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, SleepTimings
 from network.balance_helper import BalanceHelper
+from refuel import Okex
+from stargate.bridge import BridgeHelper
 
 
 # State interface defining the behavior of different states
@@ -18,7 +20,10 @@ class State:
 
 
 # State for waiting before start to randomize start time
-class SleepBeforeStart(State):
+class SleepBeforeStartState(State):
+    def __init__(self):
+        pass
+
     def handle(self, thread):
         sleep_time = random.randint(SleepTimings.AFTER_START_RANGE[0], SleepTimings.AFTER_START_RANGE[1])
 
@@ -47,7 +52,7 @@ class NetworkWithStablecoinBalance:
     stablecoin: Stablecoin
 
 
-# State for checking the stablecoin balance in source network
+# State for checking the stablecoin balance
 class CheckStablecoinBalanceState(State):
     def __init__(self):
         pass
@@ -151,8 +156,19 @@ class RefuelDecisionState(State):
     def handle(self, thread):
         thread.log_info("Checking possible refuel options")
 
-        thread.set_state(WaitForManualRefuelState(self.src_network, self.dst_network,
-                                                  self.src_stablecoin, self.dst_stablecoin))
+        # TODO: Add auto refuel with Bungee/WooFi
+
+        if REFUEL_MODE == RefuelMode.RANDOM:
+            refuel_mode = random.choice([RefuelMode.MANUAL, RefuelMode.EXCHANGE])
+        else:
+            refuel_mode = REFUEL_MODE
+
+        if refuel_mode == RefuelMode.EXCHANGE:
+            thread.set_state(SleepBeforeExchangeRefuelState(self.src_network, self.dst_network,
+                                                            self.src_stablecoin, self.dst_stablecoin))
+        else:
+            thread.set_state(WaitForManualRefuelState(self.src_network, self.dst_network,
+                                                      self.src_stablecoin, self.dst_stablecoin))
 
 
 # State for waiting for a manual native token deposit (in case the auto-refuel failed or disabled)
@@ -171,6 +187,108 @@ class WaitForManualRefuelState(State):
                                                             self.src_stablecoin, self.dst_stablecoin))
 
 
+# State for waiting before the exchange withdraw to make an account unique
+class SleepBeforeExchangeRefuelState(State):
+    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+        self.src_network = src_network
+        self.dst_network = dst_network
+        self.src_stablecoin = src_stablecoin
+        self.dst_stablecoin = dst_stablecoin
+
+    def handle(self, thread):
+        sleep_time = random.randint(SleepTimings.BEFORE_WITHDRAW_RANGE[0], SleepTimings.BEFORE_WITHDRAW_RANGE[1])
+
+        withdraw_dt = datetime.datetime.fromtimestamp(time.time() + sleep_time)
+        thread.log_info(f"Sleeping {sleep_time} seconds before withdraw from exchange. Withdraw time: {withdraw_dt}")
+        time.sleep(sleep_time)
+
+        thread.set_state(RefuelWithExchangeState(self.src_network, self.dst_network,
+                                                 self.src_stablecoin, self.dst_stablecoin))
+
+
+# State for refueling native token from exchange to cover gas fees
+class RefuelWithExchangeState(State):
+    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+        self.src_network = src_network
+        self.dst_network = dst_network
+        self.src_stablecoin = src_stablecoin
+        self.dst_stablecoin = dst_stablecoin
+
+    def refuel(self, thread, amount: float) -> bool:
+        exchange = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD)
+        symbol = self.src_network.native_token
+
+        try:
+            withdraw_info = exchange.get_withdraw_info(symbol, self.src_network.name)
+
+            if withdraw_info.min_amount > amount:
+                amount = withdraw_info.min_amount
+            amount += withdraw_info.fee * 3
+
+            balance = exchange.get_funding_balance(symbol)
+            if balance < amount:
+                # Multiplying to avoid decimals casting
+                amount_to_withdraw = exchange.buy_tokens_with_usdt(symbol, amount) * 0.99
+                exchange.transfer_funds(symbol, amount_to_withdraw, exchange.trading_account, exchange.funding_account)
+            else:
+                amount_to_withdraw = amount
+
+            exchange.withdraw(symbol, amount_to_withdraw, self.src_network.name, thread.account.address)
+
+        except NotWhitelistedAddress:
+            thread.log_info(f"WARNING! Address {thread.account.address} is not whitelisted to withdraw "
+                            f"{self.src_network.native_token} in {self.src_network.name} network")
+
+    def handle(self, thread):
+        thread.log_info(f"Exchange refueling started")
+
+        layer_zero_fee = self.src_network.estimate_layerzero_swap_fee(self.dst_network.stargate_chain_id,
+                                                                      thread.account.address) / 10 ** 18
+        swap_price = self.src_network.estimate_swap_gas_price() / 10 ** 18
+        mul = 2  # Multiplier to withdraw funds with a reserve
+
+        thread.log_info(f'L0 fee: {layer_zero_fee} {self.src_network.native_token}. '
+                        f'Swap price: {swap_price} {self.src_network.native_token}')
+
+        amount_to_withdraw = mul * (layer_zero_fee + swap_price)
+
+        thread.log_info(f'To withdraw: {amount_to_withdraw}')
+        self.refuel(thread, amount_to_withdraw)
+
+        thread.set_state(WaitForExchangeWithdrawState(self.src_network, self.dst_network,
+                                                      self.src_stablecoin, self.dst_stablecoin))
+
+
+# State for waiting for exchange withdraw processing
+class WaitForExchangeWithdrawState(State):
+    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+        self.src_network = src_network
+        self.dst_network = dst_network
+        self.src_stablecoin = src_stablecoin
+        self.dst_stablecoin = dst_stablecoin
+
+    def handle(self, thread):
+        thread.log_info(f"Waiting for the withdraw")
+
+        time.sleep(SleepTimings.EXCHANGE_WITHDRAW_RECHECK_TIME)
+
+        thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
+                                                            self.src_stablecoin, self.dst_stablecoin))
+
+
+# TODO
+class RefuelWithBungeeState(State):
+    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+        self.src_network = src_network
+        self.dst_network = dst_network
+        self.src_stablecoin = src_stablecoin
+        self.dst_stablecoin = dst_stablecoin
+
+
 # State for checking the native token balance
 class CheckNativeTokenBalanceForGasState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
@@ -185,7 +303,7 @@ class CheckNativeTokenBalanceForGasState(State):
         helper = BalanceHelper(self.src_network, thread.account.address)
 
         if helper.is_enough_native_token_balance_for_stargate_swap_fee(self.dst_network):
-            thread.log_info("Enough native token amount on source chain")
+            thread.log_info("Enough native token amount on source chain. Moving to the swap")
             thread.set_state(SleepBeforeBridgeState(self.src_network, self.dst_network,
                                                     self.src_stablecoin, self.dst_stablecoin))
         else:
@@ -204,7 +322,7 @@ class SleepBeforeBridgeState(State):
         self.dst_stablecoin = dst_stablecoin
 
     def handle(self, thread):
-        sleep_time = random.randint(SleepTimings.BETWEEN_BRIDGE_RANGE[0], SleepTimings.BETWEEN_BRIDGE_RANGE[1])
+        sleep_time = random.randint(SleepTimings.BEFORE_BRIDGE_RANGE[0], SleepTimings.BEFORE_BRIDGE_RANGE[1])
 
         next_swap_dt = datetime.datetime.fromtimestamp(time.time() + sleep_time)
         thread.log_info(f"Sleeping {sleep_time} seconds before bridge. Next bridge time: {next_swap_dt}")
@@ -234,7 +352,11 @@ class StargateSwapState(State):
         bridge_helper = BridgeHelper(thread.account, balance_helper, self.src_network, self.dst_network,
                                      self.src_stablecoin, self.dst_stablecoin, amount, STARGATE_SLIPPAGE)
 
-        bridge_helper.make_bridge()
+        result = bridge_helper.make_bridge()
 
-        thread.log_info("Bridge finished")
+        if result:
+            thread.log_info("Bridge finished")
+        else:
+            thread.log_error("Bridge error. Recheck config settings and balances")
+
         thread.set_state(CheckStablecoinBalanceState())

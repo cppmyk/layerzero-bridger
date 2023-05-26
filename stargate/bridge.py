@@ -26,13 +26,11 @@ class BridgeHelper:
 
         if not self.balance_helper.is_enough_native_token_balance_for_stargate_swap_fee(self.dst_network):
             return False
-            # raise NotEnoughNativeTokenBalance(f"{self.src_network.name} - not enough native token balance")
 
         stablecoin_balance = self.src_network.get_token_balance(self.src_stablecoin.contract_address,
                                                                 self.account.address)
         if stablecoin_balance < self.amount:
             return False
-            # raise NotEnoughStablecoinBalance(f"{self.src_network.name} - not enough stablecoin balance")
 
         return True
 
@@ -44,11 +42,11 @@ class BridgeHelper:
             self.src_network.approve_token_usage(self.account.key, self.src_stablecoin.contract_address,
                                                  self.src_network.stargate_router_address, amount)
 
-    def make_bridge(self):
+    def make_bridge(self) -> bool:
         """ Method that performs bridge from src_network to dst_network """
 
         if not self._is_bridge_possible():
-            return
+            return False
 
         self.approve_stablecoin_usage(self.amount)
         amount_with_slippage = self.amount - int(self.amount * self.slippage)
