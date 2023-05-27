@@ -3,7 +3,7 @@
 
 ## Features
 - Support for all popular EVM networks - Ethereum, Arbitrum, Optimism, Polygon, Fantom, Avalance, BSC
-- Scanning of networks for stabelcoins on balance
+- Scanning of networks for stablecoins on balance
 - Bridge via Stargate 
 - Complete randomization of paths and timings. No patterns
 - Simultaneous operation of multiple accounts in different threads
