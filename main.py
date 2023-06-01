@@ -10,5 +10,5 @@ if __name__ == "__main__":
         accounts.append(AccountThread(account_id, private_key))
         accounts[account_id].start()
 
-    while True:
-        pass
+    for account in accounts:
+        account.join()
