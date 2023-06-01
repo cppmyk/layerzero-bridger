@@ -1,7 +1,10 @@
+import os
+
+
 class PolygonConstants:
     NAME = "Polygon"
     NATIVE_TOKEN = "MATIC"
-    RPC = "https://rpc.ankr.com/polygon"
+    RPC = os.getenv("POLYGON_RPC", "https://rpc.ankr.com/polygon")
     CHAIN_ID = 137
     STARGATE_CHAIN_ID = 109
 

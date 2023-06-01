@@ -1,7 +1,10 @@
+import os
+
+
 class OptimismConstants:
     NAME = "Optimism"
     NATIVE_TOKEN = "ETH"
-    RPC = "https://opt-mainnet.g.alchemy.com/v2/demo"
+    RPC = os.getenv("OPTIMISM_RPC", "https://opt-mainnet.g.alchemy.com/v2/demo")
     CHAIN_ID = 10
     STARGATE_CHAIN_ID = 111
 
