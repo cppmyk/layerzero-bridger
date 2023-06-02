@@ -1,25 +1,19 @@
 import logging
-from dataclasses import dataclass
 from typing import List
 
 import ccxt
 
 from base.errors import ExchangeError, NotWhitelistedAddress
-from refuel.constants import OkexConstants
+from exchange.exchange import Exchange, WithdrawInfo, WithdrawStatus
+from exchange.okex.constants import OkexConstants
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class WithdrawInfo:
-    symbol: str
-    chain: str
-    fee: float
-    min_amount: float
-
-
-class Okex:
+class Okex(Exchange):
     def __init__(self, api_key: str, secret_key: str, api_password: str):
+        super().__init__('okex')
+
         self.exchange = ccxt.okex({
             'apiKey': api_key,
             'secret': secret_key,
@@ -41,7 +35,7 @@ class Okex:
 
         return result
 
-    def get_withdraw_info(self, symbol: str, network: str):
+    def get_withdraw_info(self, symbol: str, network: str) -> WithdrawInfo:
         okx_network = OkexConstants.NETWORKS[network]
         withdraw_options = self._get_withdraw_infos(symbol)
 
@@ -54,7 +48,9 @@ class Okex:
 
         return withdraw_info
 
-    def withdraw(self, symbol: str, amount: float, network: str, address: str):
+    def withdraw(self, symbol: str, amount: float, network: str, address: str) -> str:
+        """ Method that initiates the withdrawal and returns the withdrawal id """
+
         logger.info(f'{symbol} withdraw initiated. Amount: {amount}. Network: {network}. Address: {address}')
         withdraw_info = self.get_withdraw_info(symbol, network)
         amount -= withdraw_info.fee
@@ -70,6 +66,14 @@ class Okex:
             raise
 
         logger.debug('Withdraw result:', result)
+        withdraw_id = result['id']
+
+        return str(withdraw_id)
+
+    def get_withdraw_status(self, withdraw_id: str) -> WithdrawStatus:
+        withdraw_info = self.exchange.fetch_withdrawal(withdraw_id)
+
+        return self._parse_withdraw_status(withdraw_info)
 
     def transfer_funds(self, symbol: str, amount: float, from_account: str, to_account: str):
         logger.info(f'{symbol} transfer initiated. From {from_account} to {to_account}')
@@ -90,7 +94,7 @@ class Okex:
         return received_amount
 
     def get_funding_balance(self, symbol: str) -> float:
-        balance = self.exchange.fetch_balance(params={'type': 'funding'})
+        balance = self.exchange.fetch_balance(params={'type': self.funding_account})
 
         if symbol not in balance['total']:
             return 0
@@ -98,14 +102,20 @@ class Okex:
 
         return token_balance
 
-    def buy_token_and_withdraw(self, symbol: str, amount: float, network: str, address: str):
+    def buy_token_and_withdraw(self, symbol: str, amount: float, network: str, address: str) -> None:
         withdraw_info = self.get_withdraw_info(symbol, network)
 
         if withdraw_info.min_amount > amount:
             amount = withdraw_info.min_amount
         amount += withdraw_info.fee * 3
 
-        bought_amount = self.buy_tokens_with_usdt(symbol, amount) * 0.99  # Multiplying to avoid decimals casting
+        balance = self.get_funding_balance(symbol)
+        if balance < amount:
+            # Multiplying to avoid decimals casting
+            amount_to_withdraw = self.buy_tokens_with_usdt(symbol, amount) * 0.99
+            self.transfer_funds(symbol, amount_to_withdraw, self.trading_account, self.funding_account)
+        else:
+            amount_to_withdraw = amount
 
-        self.transfer_funds(symbol, bought_amount, self.trading_account, self.funding_account)
-        self.withdraw(symbol, bought_amount, network, address)
+        withdraw_id = self.withdraw(symbol, amount_to_withdraw, network, address)
+        self.wait_for_withdraw_to_finish(withdraw_id)

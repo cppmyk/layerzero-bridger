@@ -47,7 +47,6 @@ class SleepTimings:
     BEFORE_BRIDGE_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 1 hour. Sleep before bridge
     BALANCE_RECHECK_TIME = TimeRanges.MINUTE * 2  # 2 minutes. Recheck time for stablecoin or native token deposit
     BEFORE_WITHDRAW_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 30 minutes. Sleep before withdraw from exchange
-    EXCHANGE_WITHDRAW_RECHECK_TIME = TimeRanges.MINUTE * 30  # 30 minutes. After this time soft will try to withdraw funds one more time
 
 
 # -------- Utility class --------

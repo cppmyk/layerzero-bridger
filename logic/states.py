@@ -7,10 +7,11 @@ from typing import List
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
 from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD
-from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, RefuelMode
+from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
+    RefuelMode
 from network import EVMNetwork, Stablecoin
 from network.balance_helper import BalanceHelper
-from refuel import Okex
+from exchange import Okex
 from stargate.bridge import BridgeHelper
 
 logger = logging.getLogger(__name__)
@@ -141,7 +142,7 @@ class ChooseDestinationStablecoinState(State):
 
         logger.info(f"Destination stablecoin is chosen - {dst_stablecoin.symbol}")
         logger.info(f"Path: {self.src_stablecoin.symbol}({self.src_network.name}) -> "
-                        f"{dst_stablecoin.symbol}({self.dst_network.name})")
+                    f"{dst_stablecoin.symbol}({self.dst_network.name})")
 
         thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, dst_stablecoin))
@@ -224,22 +225,7 @@ class RefuelWithExchangeState(State):
         symbol = self.src_network.native_token
 
         try:
-            withdraw_info = exchange.get_withdraw_info(symbol, self.src_network.name)
-
-            if withdraw_info.min_amount > amount:
-                amount = withdraw_info.min_amount
-            amount += withdraw_info.fee * 3
-
-            balance = exchange.get_funding_balance(symbol)
-            if balance < amount:
-                # Multiplying to avoid decimals casting
-                amount_to_withdraw = exchange.buy_tokens_with_usdt(symbol, amount) * 0.99
-                exchange.transfer_funds(symbol, amount_to_withdraw, exchange.trading_account, exchange.funding_account)
-            else:
-                amount_to_withdraw = amount
-
-            exchange.withdraw(symbol, amount_to_withdraw, self.src_network.name, thread.account.address)
-
+            exchange.buy_token_and_withdraw(symbol, amount, self.src_network.name, thread.account.address)
         except NotWhitelistedAddress:
             logger.warning(f"WARNING! Address {thread.account.address} is not whitelisted to withdraw "
                            f"{self.src_network.native_token} in {self.src_network.name} network")
@@ -259,24 +245,6 @@ class RefuelWithExchangeState(State):
 
         logger.info(f'To withdraw: {amount_to_withdraw}')
         self.refuel(thread, amount_to_withdraw)
-
-        thread.set_state(WaitForExchangeWithdrawState(self.src_network, self.dst_network,
-                                                      self.src_stablecoin, self.dst_stablecoin))
-
-
-# State for waiting for exchange withdraw processing
-class WaitForExchangeWithdrawState(State):
-    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
-        self.src_network = src_network
-        self.dst_network = dst_network
-        self.src_stablecoin = src_stablecoin
-        self.dst_stablecoin = dst_stablecoin
-
-    def handle(self, thread):
-        logger.info(f"Waiting for the withdraw")
-
-        time.sleep(SleepTimings.EXCHANGE_WITHDRAW_RECHECK_TIME)
 
         thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, self.dst_stablecoin))
