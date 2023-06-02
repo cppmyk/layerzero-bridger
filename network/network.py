@@ -1,3 +1,4 @@
+import logging
 from typing import Dict
 
 import web3.exceptions
@@ -7,6 +8,8 @@ from abi import ERC20_ABI, STARGATE_ROUTER_ABI
 from base.errors import NotSupported
 from network.stablecoin import Stablecoin
 from stargate import StargateConstants
+
+logger = logging.getLogger(__name__)
 
 
 class Network:
@@ -101,7 +104,7 @@ class EVMNetwork(Network):
         try:
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
         except web3.exceptions.TimeExhausted:
-            print('Approve tx waiting time exceeded')
+            logger.error('Approve tx waiting time exceeded')
             return False
 
         return True
@@ -149,7 +152,7 @@ class EVMNetwork(Network):
         nonce = self.get_nonce(account.address)
         gas_price = int(self.get_current_gas() * 1.2) if fast_gas else self.get_current_gas()
 
-        print(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas price: {gas_price}')
+        logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas price: {gas_price}')
 
         tx = contract.functions.swap(
             dst_chain_id,  # destination chainId
@@ -176,12 +179,12 @@ class EVMNetwork(Network):
         signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
         tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
-        print(f'Hash: {tx_hash.hex()}')
+        logger.info(f'Hash: {tx_hash.hex()}')
 
         try:
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
         except web3.exceptions.TimeExhausted:
-            print('Bridge tx waiting time exceeded')
+            logger.error('Bridge tx waiting time exceeded')
             return False
 
         return True

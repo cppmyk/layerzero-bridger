@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import List
 
@@ -5,6 +6,8 @@ import ccxt
 
 from base.errors import ExchangeError, NotWhitelistedAddress
 from refuel.constants import OkexConstants
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -52,10 +55,10 @@ class Okex:
         return withdraw_info
 
     def withdraw(self, symbol: str, amount: float, network: str, address: str):
-        print(f'{symbol} withdraw initiated. Amount: {amount}. Network: {network}. Address: {address}')
+        logger.info(f'{symbol} withdraw initiated. Amount: {amount}. Network: {network}. Address: {address}')
         withdraw_info = self.get_withdraw_info(symbol, network)
         amount -= withdraw_info.fee
-        print(f'Amount with fee: {amount}')
+        logger.info(f'Amount with fee: {amount}')
 
         try:
             result = self.exchange.withdraw(symbol, amount, address,
@@ -66,15 +69,15 @@ class Okex:
                                             f'The address must be added to the whitelist') from ex
             raise
 
-        # print('Withdraw result:', result)
+        logger.debug('Withdraw result:', result)
 
     def transfer_funds(self, symbol: str, amount: float, from_account: str, to_account: str):
-        print(f'{symbol} transfer initiated. From {from_account} to {to_account}')
+        logger.info(f'{symbol} transfer initiated. From {from_account} to {to_account}')
         result = self.exchange.transfer(symbol, amount, from_account, to_account)
-        # print('Transfer result:', result)
+        logger.debug('Transfer result:', result)
 
     def buy_tokens_with_usdt(self, symbol: str, amount: float) -> float:
-        print(f'{symbol} purchase initiated. Amount: {amount}')
+        logger.info(f'{symbol} purchase initiated. Amount: {amount}')
         trading_symbol = symbol + '/USDT'
 
         creation_result = self.exchange.create_market_order(trading_symbol, 'buy', amount)
