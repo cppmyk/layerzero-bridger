@@ -27,9 +27,9 @@ PRIVATE_KEYS_FILE_PATH = "private_keys.txt"
 
 
 class RefuelMode(Enum):
-    RANDOM = 0  # 50% chance of MANUAL, 50% chance of EXCHANGE
     MANUAL = 1  # Manual refuel
-    EXCHANGE = 2  # Automatic native token buy and withdraw from Okex exchange
+    OKEX = 2  # Automatic refuel from the Okex exchange
+    BINANCE = 3  # Automatic refuel from the Binance exchange
 
 
 REFUEL_MODE = RefuelMode.MANUAL  # One of RefuelMode constants
