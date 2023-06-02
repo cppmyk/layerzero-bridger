@@ -1,7 +1,10 @@
+import os
+
+
 class ArbitrumConstants:
     NAME = "Arbitrum"
     NATIVE_TOKEN = "ETH"
-    RPC = "https://arb-mainnet-public.unifra.io"
+    RPC = os.getenv("ARBITRUM_RPC", "https://arb-mainnet-public.unifra.io")
     CHAIN_ID = 42161
     STARGATE_CHAIN_ID = 110
 

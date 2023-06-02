@@ -1,7 +1,10 @@
+import os
+
+
 class FantomConstants:
     NAME = "Fantom"
     NATIVE_TOKEN = "FRM"
-    RPC = "https://rpc.ankr.com/fantom"
+    RPC = os.getenv("FANTOM_RPC", "https://rpc.ankr.com/fantom")
     CHAIN_ID = 250
     STARGATE_CHAIN_ID = 112
 

@@ -1,3 +1,4 @@
+import os
 from typing import List
 from enum import Enum
 
@@ -18,9 +19,9 @@ STARGATE_SLIPPAGE = 0.01  # 0.01 - 1%
 MIN_STABLECOIN_BALANCE = 1  # Minimal balance to bridge
 
 # Keys
-OKEX_API_KEY = ""
-OKEX_SECRET_KEY = ""
-OKEX_PASSWORD = ""
+OKEX_API_KEY = os.getenv("OKEX_API_KEY", "")
+OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY", "")
+OKEX_PASSWORD = os.getenv("OKEX_PASSWORD", "")
 
 PRIVATE_KEYS_FILE_PATH = "private_keys.txt"
 

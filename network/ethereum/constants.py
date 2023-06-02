@@ -1,7 +1,10 @@
+import os
+
+
 class EthereumConstants:
     NAME = "Ethereum"
     NATIVE_TOKEN = "ETH"
-    RPC = "https://eth.llamarpc.com"
+    RPC = os.getenv("ETHEREUM_RPC", "https://eth.llamarpc.com")
     CHAIN_ID = 1
     STARGATE_CHAIN_ID = 101
 
