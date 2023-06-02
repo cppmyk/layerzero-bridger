@@ -15,5 +15,5 @@ if __name__ == "__main__":
     if not accounts:
         raise Exception("No accounts found")
 
-    while True:
-        pass
+    for account in accounts:
+        account.join()
