@@ -1,10 +1,7 @@
-import os
-
-
 class AvalancheConstants:
     NAME = "Avalanche"
     NATIVE_TOKEN = "AVAX"
-    RPC = os.getenv("AVALANCHE_RPC", "https://rpc.ankr.com/avalanche")
+    RPC = "https://rpc.ankr.com/avalanche"
     CHAIN_ID = 43114
     STARGATE_CHAIN_ID = 106
 

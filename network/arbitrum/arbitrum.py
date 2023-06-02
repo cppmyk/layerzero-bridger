@@ -1,7 +1,7 @@
-from network.network import EVMNetwork
 from network.arbitrum.constants import ArbitrumConstants
-from utility import Stablecoin
+from network.network import EVMNetwork
 from stargate import StargateConstants
+from utility import Stablecoin
 
 
 class Arbitrum(EVMNetwork):
@@ -18,5 +18,13 @@ class Arbitrum(EVMNetwork):
                          ArbitrumConstants.STARGATE_CHAIN_ID, ArbitrumConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
-    def _get_approve_gas_limit(self) -> int:
+    def get_approve_gas_limit(self) -> int:
         return ArbitrumConstants.APPROVE_GAS_LIMIT
+
+    def get_transaction_gas_params(self) -> dict:
+        gas_params = {
+            'maxFeePerGas': self.get_current_gas() + 35000000,
+            'maxPriorityFeePerGas': 0
+        }
+
+        return gas_params

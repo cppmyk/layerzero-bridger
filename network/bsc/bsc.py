@@ -1,7 +1,7 @@
-from network.network import EVMNetwork
 from network.bsc.constants import BSCConstants
-from utility import Stablecoin
+from network.network import EVMNetwork
 from stargate import StargateConstants
+from utility import Stablecoin
 
 
 class BSC(EVMNetwork):
@@ -18,5 +18,12 @@ class BSC(EVMNetwork):
                          BSCConstants.STARGATE_CHAIN_ID, BSCConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
-    def _get_approve_gas_limit(self) -> int:
+    def get_approve_gas_limit(self) -> int:
         return BSCConstants.APPROVE_GAS_LIMIT
+
+    def get_transaction_gas_params(self) -> dict:
+        gas_params = {
+            'gasPrice': self.get_current_gas()
+        }
+
+        return gas_params

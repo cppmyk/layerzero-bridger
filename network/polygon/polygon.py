@@ -1,7 +1,7 @@
 from network.network import EVMNetwork
 from network.polygon.constants import PolygonConstants
-from utility import Stablecoin
 from stargate import StargateConstants
+from utility import Stablecoin
 
 
 class Polygon(EVMNetwork):
@@ -18,5 +18,13 @@ class Polygon(EVMNetwork):
                          PolygonConstants.STARGATE_CHAIN_ID, PolygonConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
-    def _get_approve_gas_limit(self) -> int:
+    def get_approve_gas_limit(self) -> int:
         return PolygonConstants.APPROVE_GAS_LIMIT
+
+    def get_transaction_gas_params(self) -> dict:
+        gas_params = {
+            'maxFeePerGas': self.get_current_gas() * 2,
+            'maxPriorityFeePerGas': self.w3.eth.max_priority_fee
+        }
+
+        return gas_params

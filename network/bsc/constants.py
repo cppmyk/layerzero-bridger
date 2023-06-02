@@ -1,10 +1,7 @@
-import os
-
-
 class BSCConstants:
     NAME = "BSC"
     NATIVE_TOKEN = "BNB"
-    RPC = os.getenv("BSC_RPC", "https://rpc.ankr.com/bsc")
+    RPC = "https://rpc.ankr.com/bsc"
     CHAIN_ID = 56
     STARGATE_CHAIN_ID = 102
 

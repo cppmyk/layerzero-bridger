@@ -1,3 +1,8 @@
+import random
+
+from base.errors import NotSupported
+
+
 class StargateConstants:
     SWAP_GAS_LIMIT = {
         'Ethereum': 600_000,
@@ -8,6 +13,7 @@ class StargateConstants:
         'BSC': 600_000,
         'Avalanche': 600_000
     }
+    RANDOMIZE_PERCENT = 0.05  # Percent of gas limit random
 
     POOLS = {
         "USDC": 1,
@@ -18,3 +24,17 @@ class StargateConstants:
         "USDD": 11,
         "ETH": 13,
     }
+
+    @staticmethod
+    def get_max_randomized_swap_gas_limit(network_name: str) -> int:
+        return int(StargateConstants.SWAP_GAS_LIMIT[network_name] * (1 + StargateConstants.RANDOMIZE_PERCENT))
+
+    @staticmethod
+    def get_randomized_swap_gas_limit(network_name: str) -> int:
+        if network_name not in StargateConstants.SWAP_GAS_LIMIT:
+            raise NotSupported(f"{network_name} isn't supported by get_swap_gas_limit()")
+
+        min_rand = int(StargateConstants.SWAP_GAS_LIMIT[network_name] * (1 - StargateConstants.RANDOMIZE_PERCENT))
+        max_rand = int(StargateConstants.SWAP_GAS_LIMIT[network_name] * (1 + StargateConstants.RANDOMIZE_PERCENT))
+
+        return random.randint(min_rand, max_rand)

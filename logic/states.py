@@ -9,10 +9,11 @@ from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWh
 from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD
 from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
     RefuelMode
-from network import EVMNetwork, Stablecoin
+from network import EVMNetwork
+from utility import Stablecoin
 from network.balance_helper import BalanceHelper
 from exchange import Okex
-from stargate.bridge import BridgeHelper
+from stargate import StargateBridgeHelper, StargateUtils
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +186,7 @@ class WaitForManualRefuelState(State):
         self.dst_stablecoin = dst_stablecoin
 
     def handle(self, thread):
-        logger.info(f"{self.src_network.name}. Waiting for the native token deposit")
+        logger.info(f"{self.src_network.name}. Manual refuel chosen. Waiting for the native token deposit")
         time.sleep(SleepTimings.BALANCE_RECHECK_TIME)
         thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, self.dst_stablecoin))
@@ -233,9 +234,9 @@ class RefuelWithExchangeState(State):
     def handle(self, thread):
         logger.info(f"Exchange refueling started")
 
-        layer_zero_fee = self.src_network.estimate_layerzero_swap_fee(self.dst_network.stargate_chain_id,
-                                                                      thread.account.address) / 10 ** 18
-        swap_price = self.src_network.estimate_swap_gas_price() / 10 ** 18
+        layer_zero_fee = StargateUtils.estimate_layerzero_swap_fee(self.src_network, self.dst_network,
+                                                                   thread.account.address) / 10 ** 18
+        swap_price = StargateUtils.estimate_swap_gas_price(self.src_network) / 10 ** 18
         mul = 2  # Multiplier to withdraw funds with a reserve
 
         logger.info(f'L0 fee: {layer_zero_fee} {self.src_network.native_token}. '
@@ -271,9 +272,9 @@ class CheckNativeTokenBalanceForGasState(State):
 
     def handle(self, thread):
         logger.info("Checking native token balance")
-        helper = BalanceHelper(self.src_network, thread.account.address)
 
-        if helper.is_enough_native_token_balance_for_stargate_swap_fee(self.dst_network):
+        if StargateUtils.is_enough_native_token_balance_for_stargate_swap_fee(self.src_network, self.dst_network,
+                                                                              thread.account.address):
             logger.info("Enough native token amount on source chain. Moving to the swap")
             thread.set_state(SleepBeforeBridgeState(self.src_network, self.dst_network,
                                                     self.src_stablecoin, self.dst_stablecoin))
@@ -320,14 +321,10 @@ class StargateSwapState(State):
                     f"{self.src_stablecoin.symbol}({self.src_network.name}) -> "
                     f"{self.dst_stablecoin.symbol}({self.dst_network.name})")
 
-        bridge_helper = BridgeHelper(thread.account, balance_helper, self.src_network, self.dst_network,
-                                     self.src_stablecoin, self.dst_stablecoin, amount, STARGATE_SLIPPAGE)
+        bridge_helper = StargateBridgeHelper(thread.account, self.src_network, self.dst_network,
+                                             self.src_stablecoin, self.dst_stablecoin, amount, STARGATE_SLIPPAGE)
+        bridge_helper.make_bridge()
 
-        result = bridge_helper.make_bridge()
-
-        if result:
-            logger.info("Bridge finished")
-        else:
-            logger.error("Bridge error. Recheck config settings and balances")
+        logger.info("Bridge finished")
 
         thread.set_state(CheckStablecoinBalanceState())

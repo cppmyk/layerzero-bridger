@@ -1,7 +1,7 @@
-from network.network import EVMNetwork
 from network.avalanche.constants import AvalancheConstants
-from utility import Stablecoin
+from network.network import EVMNetwork
 from stargate import StargateConstants
+from utility import Stablecoin
 
 
 class Avalanche(EVMNetwork):
@@ -18,5 +18,13 @@ class Avalanche(EVMNetwork):
                          AvalancheConstants.STARGATE_CHAIN_ID, AvalancheConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
-    def _get_approve_gas_limit(self) -> int:
+    def get_approve_gas_limit(self) -> int:
         return AvalancheConstants.APPROVE_GAS_LIMIT
+
+    def get_transaction_gas_params(self) -> dict:
+        gas_params = {
+            'maxFeePerGas': int(self.get_current_gas() * 1.7),
+            'maxPriorityFeePerGas': 1500000000
+        }
+
+        return gas_params
