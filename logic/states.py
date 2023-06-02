@@ -7,7 +7,7 @@ from typing import List
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
 from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD
-from config import SUPPORTED_NETWORKS, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, RefuelMode
+from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, RefuelMode
 from network import EVMNetwork, Stablecoin
 from network.balance_helper import BalanceHelper
 from refuel import Okex
@@ -77,7 +77,7 @@ class CheckStablecoinBalanceState(State):
 
         result = []
 
-        for network in SUPPORTED_NETWORKS:
+        for network in SUPPORTED_NETWORKS_STARGATE:
             for stablecoin in network.supported_stablecoins.values():
                 if self.is_enough_balance(BalanceHelper(network, thread.account.address),
                                           stablecoin):
@@ -112,7 +112,7 @@ class ChooseDestinationNetworkState(State):
     def handle(self, thread):
         logger.info("Randomizing destination network")
 
-        networks = SUPPORTED_NETWORKS.copy()
+        networks = SUPPORTED_NETWORKS_STARGATE.copy()
         networks.remove(self.src_network)
 
         if len(networks) == 0:

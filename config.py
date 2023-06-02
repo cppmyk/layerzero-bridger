@@ -5,7 +5,7 @@ from enum import Enum
 from base.errors import ConfigurationError
 from network import Ethereum, Polygon, Fantom, Avalanche, Arbitrum, BSC, Optimism
 
-SUPPORTED_NETWORKS = [
+SUPPORTED_NETWORKS_STARGATE = [
     # Ethereum(),  # High gas price
     Polygon(),
     # Fantom(),  # Liquidity problems
@@ -19,9 +19,9 @@ STARGATE_SLIPPAGE = 0.01  # 0.01 - 1%
 MIN_STABLECOIN_BALANCE = 1  # Minimal balance to bridge
 
 # Keys
-OKEX_API_KEY = os.getenv("OKEX_API_KEY", "")
-OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY", "")
-OKEX_PASSWORD = os.getenv("OKEX_PASSWORD", "")
+OKEX_API_KEY = os.getenv("OKEX_API_KEY", "insert-key-here")
+OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY", "insert-key-here")
+OKEX_PASSWORD = os.getenv("OKEX_PASSWORD", "insert-key-here")
 
 PRIVATE_KEYS_FILE_PATH = "private_keys.txt"
 
@@ -44,44 +44,65 @@ class TimeRanges:
 # Randomization ranges (seconds). The ranges shown are just examples of values that can easily be changed
 class SleepTimings:
     AFTER_START_RANGE = (0, TimeRanges.MINUTE * 10)  # from 0 seconds to 10 minutes. Sleep after start
-    BEFORE_BRIDGE_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 30 minutes. Sleep before bridge
+    BEFORE_BRIDGE_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 1 hour. Sleep before bridge
     BALANCE_RECHECK_TIME = TimeRanges.MINUTE * 2  # 2 minutes. Recheck time for stablecoin or native token deposit
     BEFORE_WITHDRAW_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 30 minutes. Sleep before withdraw from exchange
     EXCHANGE_WITHDRAW_RECHECK_TIME = TimeRanges.MINUTE * 30  # 30 minutes. After this time soft will try to withdraw funds one more time
 
 
-def load_private_keys() -> List[str]:
-    with open(PRIVATE_KEYS_FILE_PATH, 'r') as file:
-        return file.read().splitlines()
+# -------- Utility class --------
+class ConfigurationHelper:
 
+    @staticmethod
+    def load_default_keys() -> List[str]:
+        keys = ConfigurationHelper.load_private_keys(PRIVATE_KEYS_FILE_PATH)
+        if not keys:
+            raise ConfigurationError(f'No private keys were found. Check the contents of the {PRIVATE_KEYS_FILE_PATH}')
 
-def check_networks_list():
-    if len(SUPPORTED_NETWORKS) == 0:
-        raise ConfigurationError('Supported network list is empty. Unable to run with such a configuration')
-    elif len(SUPPORTED_NETWORKS) == 1:
-        raise ConfigurationError('Only one supported network is provided. Unable to run with such a configuration')
+        return keys
 
+    @staticmethod
+    def load_private_keys(file_path: str) -> List[str]:
+        with open(file_path, 'r') as file:
+            return file.read().splitlines()
 
-def check_stagrate_slippage():
-    if STARGATE_SLIPPAGE < 0.001:
-        raise ConfigurationError("Slippage can't be lower than 0.01%. Check configuration settings")
-    if STARGATE_SLIPPAGE > 0.2:
-        raise ConfigurationError("Slippage is too high. It's more than 20%. Check configuration settings")
+    @staticmethod
+    def check_networks_list() -> None:
+        if len(SUPPORTED_NETWORKS_STARGATE) == 0:
+            raise ConfigurationError('Supported network list is empty. Unable to run with such a configuration')
+        elif len(SUPPORTED_NETWORKS_STARGATE) == 1:
+            raise ConfigurationError('Only one supported network is provided. Unable to run with such a configuration')
 
+    @staticmethod
+    def check_stargate_slippage() -> None:
+        if STARGATE_SLIPPAGE < 0.001:
+            raise ConfigurationError("Slippage can't be lower than 0.01%. Check configuration settings")
+        if STARGATE_SLIPPAGE > 0.2:
+            raise ConfigurationError("Slippage is too high. It's more than 20%. Check configuration settings")
 
-def check_min_stablecoin_balance():
-    if MIN_STABLECOIN_BALANCE < 0:
-        raise ConfigurationError("Incorrect minimum stablecoin balance. It can't be lower than zero. "
-                                 "Check configuration settings")
+    @staticmethod
+    def check_min_stablecoin_balance() -> None:
+        if MIN_STABLECOIN_BALANCE < 0:
+            raise ConfigurationError("Incorrect minimum stablecoin balance. It can't be lower than zero. "
+                                     "Check configuration settings")
 
+    @staticmethod
+    def check_refuel_mode() -> None:
+        if not isinstance(REFUEL_MODE, RefuelMode):
+            raise ConfigurationError('Incorrect REFUEL_MODE value. Check possible values in the RefuelMode class')
 
-def check_refuel_mode():
-    if not isinstance(REFUEL_MODE, RefuelMode):
-        raise ConfigurationError('Incorrect REFUEL_MODE value. Check possible values in the RefuelMode class')
+    @staticmethod
+    def create_logging_directory() -> None:
+        log_dir = 'logs'
 
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
-def check_configuration():
-    check_networks_list()
-    check_stagrate_slippage()
-    check_min_stablecoin_balance()
-    check_refuel_mode()
+    @staticmethod
+    def check_configuration() -> None:
+        ConfigurationHelper.check_networks_list()
+        ConfigurationHelper.check_stargate_slippage()
+        ConfigurationHelper.check_min_stablecoin_balance()
+        ConfigurationHelper.check_refuel_mode()
+
+        ConfigurationHelper.create_logging_directory()

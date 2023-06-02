@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class AccountThread(threading.Thread):
     def __init__(self, account_id: int, private_key: str):
-        super().__init__(name=f"Account{account_id}")
+        super().__init__(name=f"Account-{account_id}")
         self.account_id = account_id
         self.account = Account.from_key(private_key)
         self.state = SleepBeforeStartState()
