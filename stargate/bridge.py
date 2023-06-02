@@ -1,3 +1,4 @@
+import logging
 import time
 
 from config import TimeRanges
@@ -5,6 +6,8 @@ from network import EVMNetwork, Stablecoin
 from eth_account.signers.local import LocalAccount
 from base.errors import NotEnoughNativeTokenBalance, NotEnoughStablecoinBalance
 from network.balance_helper import BalanceHelper
+
+logger = logging.getLogger(__name__)
 
 
 class BridgeHelper:
@@ -37,7 +40,7 @@ class BridgeHelper:
     def approve_stablecoin_usage(self, amount: int) -> None:
         allowance = self.src_network.get_token_allowance(self.src_stablecoin.contract_address, self.account.address,
                                                          self.src_network.stargate_router_address)
-        # print(f'Allowance: {allowance}. Amount: {amount}')
+        logger.debug(f'Allowance: {allowance}. Amount: {amount}')
         if allowance < amount:
             self.src_network.approve_token_usage(self.account.key, self.src_stablecoin.contract_address,
                                                  self.src_network.stargate_router_address, amount)
