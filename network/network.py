@@ -6,7 +6,7 @@ from web3 import HTTPProvider, Web3
 
 from abi import ERC20_ABI, STARGATE_ROUTER_ABI
 from base.errors import NotSupported
-from network.stablecoin import Stablecoin
+from utility import Stablecoin
 from stargate import StargateConstants
 
 logger = logging.getLogger(__name__)
