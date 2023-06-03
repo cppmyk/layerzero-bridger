@@ -89,7 +89,7 @@ class StargateBridgeHelper:
 
         if result == TransactionStatus.NOT_FOUND:
             raise TransactionNotFound(f"{name} transaction can't be found in the blockchain"
-                                      "for a log time. Consider changing fee settings")
+                                      " for a log time. Consider changing fee settings")
         if result == TransactionStatus.FAILED:
             raise TransactionFailed(f"{name} transaction failed")
 
@@ -109,8 +109,7 @@ class StargateBridgeHelper:
         gas_params = self.src_network.get_transaction_gas_params()
         amount_with_slippage = self.amount - int(self.amount * self.slippage)
 
-        logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas price: {gas_params}')
-
+        logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas settings: {gas_params}')
         tx = contract.functions.swap(
             self.dst_network.stargate_chain_id,  # destination chainId
             self.src_stablecoin.stargate_pool_id,  # source poolId
