@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from typing import List
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
-from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD
+from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD, BINANCE_API_KEY, BINANCE_SECRET_KEY
 from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
     RefuelMode
 from network import EVMNetwork
 from utility import Stablecoin
 from network.balance_helper import BalanceHelper
-from exchange import Okex
+from exchange import Okex, Binance
 from stargate import StargateBridgeHelper, StargateUtils
 
 logger = logging.getLogger(__name__)
@@ -163,12 +163,7 @@ class RefuelDecisionState(State):
 
         # TODO: Add auto refuel with Bungee/WooFi
 
-        if REFUEL_MODE == RefuelMode.RANDOM:
-            refuel_mode = random.choice([RefuelMode.MANUAL, RefuelMode.EXCHANGE])
-        else:
-            refuel_mode = REFUEL_MODE
-
-        if refuel_mode == RefuelMode.EXCHANGE:
+        if REFUEL_MODE == RefuelMode.OKEX or REFUEL_MODE == RefuelMode.BINANCE:
             thread.set_state(SleepBeforeExchangeRefuelState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, self.dst_stablecoin))
         else:
@@ -222,7 +217,11 @@ class RefuelWithExchangeState(State):
         self.dst_stablecoin = dst_stablecoin
 
     def refuel(self, thread, amount: float) -> None:
-        exchange = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD)
+        if REFUEL_MODE == RefuelMode.OKEX:
+            exchange = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD)
+        else:
+            exchange = Binance(BINANCE_API_KEY, BINANCE_SECRET_KEY)
+
         symbol = self.src_network.native_token
 
         try:
