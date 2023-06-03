@@ -23,7 +23,7 @@ class Avalanche(EVMNetwork):
 
     def get_transaction_gas_params(self) -> dict:
         gas_params = {
-            'maxFeePerGas': int(self.get_current_gas() * 1.7),
+            'maxFeePerGas': int(self.get_current_gas() * 1.5),
             'maxPriorityFeePerGas': 1500000000
         }
 
