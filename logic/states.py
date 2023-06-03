@@ -6,13 +6,12 @@ from dataclasses import dataclass
 from typing import List
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
-from config import OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD, BINANCE_API_KEY, BINANCE_SECRET_KEY
 from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
     RefuelMode
 from network import EVMNetwork
 from utility import Stablecoin
 from network.balance_helper import BalanceHelper
-from exchange import Okex, Binance
+from exchange import ExchangeFactory
 from stargate import StargateBridgeHelper, StargateUtils
 
 logger = logging.getLogger(__name__)
@@ -217,10 +216,12 @@ class RefuelWithExchangeState(State):
         self.dst_stablecoin = dst_stablecoin
 
     def refuel(self, thread, amount: float) -> None:
+        factory = ExchangeFactory()
+
         if REFUEL_MODE == RefuelMode.OKEX:
-            exchange = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSWORD)
+            exchange = factory.create("okex")
         else:
-            exchange = Binance(BINANCE_API_KEY, BINANCE_SECRET_KEY)
+            exchange = factory.create("binance")
 
         symbol = self.src_network.native_token
 
