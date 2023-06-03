@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class AvalancheConstants:
     NAME = "Avalanche"
     NATIVE_TOKEN = "AVAX"
-    RPC = "https://rpc.ankr.com/avalanche"
+    RPC = os.getenv("AVALANCHE_RPC")
     CHAIN_ID = 43114
     STARGATE_CHAIN_ID = 106
 

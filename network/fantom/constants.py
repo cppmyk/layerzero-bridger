@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class FantomConstants:
     NAME = "Fantom"
     NATIVE_TOKEN = "FRM"
-    RPC = "https://rpc.ankr.com/fantom"
+    RPC = os.getenv("FANTOM_RPC")
     CHAIN_ID = 250
     STARGATE_CHAIN_ID = 112
 

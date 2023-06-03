@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class PolygonConstants:
     NAME = "Polygon"
     NATIVE_TOKEN = "MATIC"
-    RPC = "https://rpc.ankr.com/polygon"
+    RPC = os.getenv("POLYGON_RPC")
     CHAIN_ID = 137
     STARGATE_CHAIN_ID = 109
 

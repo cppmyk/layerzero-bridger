@@ -19,11 +19,14 @@ STARGATE_SLIPPAGE = 0.01  # 0.01 - 1%
 MIN_STABLECOIN_BALANCE = 1  # Minimal balance to bridge
 
 # Keys
-OKEX_API_KEY = os.getenv("OKEX_API_KEY", "insert-key-here")
-OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY", "insert-key-here")
-OKEX_PASSWORD = os.getenv("OKEX_PASSWORD", "insert-key-here")
+OKEX_API_KEY = os.getenv("OKEX_API_KEY")
+OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY")
+OKEX_PASSWORD = os.getenv("OKEX_PASSWORD")
 
-PRIVATE_KEYS_FILE_PATH = "private_keys.txt"
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
+BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY")
+
+DEFAULT_PRIVATE_KEYS_FILE_PATH = os.getenv("DEFAULT_PRIVATE_KEYS_FILE_PATH")
 
 
 class RefuelMode(Enum):
@@ -32,7 +35,7 @@ class RefuelMode(Enum):
     BINANCE = 3  # Automatic refuel from the Binance exchange
 
 
-REFUEL_MODE = RefuelMode.MANUAL  # One of RefuelMode constants
+REFUEL_MODE = RefuelMode.BINANCE  # One of RefuelMode constants
 
 
 # Utility class
@@ -43,7 +46,7 @@ class TimeRanges:
 
 # Randomization ranges (seconds). The ranges shown are just examples of values that can easily be changed
 class SleepTimings:
-    AFTER_START_RANGE = (0, TimeRanges.MINUTE * 10)  # from 0 seconds to 10 minutes. Sleep after start
+    AFTER_START_RANGE = (0, TimeRanges.MINUTE)  # from 0 seconds to 10 minutes. Sleep after start
     BEFORE_BRIDGE_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 1 hour. Sleep before bridge
     BALANCE_RECHECK_TIME = TimeRanges.MINUTE * 2  # 2 minutes. Recheck time for stablecoin or native token deposit
     BEFORE_WITHDRAW_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 30 minutes. Sleep before withdraw from exchange
@@ -54,9 +57,10 @@ class ConfigurationHelper:
 
     @staticmethod
     def load_default_keys() -> List[str]:
-        keys = ConfigurationHelper.load_private_keys(PRIVATE_KEYS_FILE_PATH)
+        keys = ConfigurationHelper.load_private_keys(DEFAULT_PRIVATE_KEYS_FILE_PATH)
         if not keys:
-            raise ConfigurationError(f'No private keys were found. Check the contents of the {PRIVATE_KEYS_FILE_PATH}')
+            raise ConfigurationError(
+                f'No private keys were found. Check the contents of the {DEFAULT_PRIVATE_KEYS_FILE_PATH}')
 
         return keys
 

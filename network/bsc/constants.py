@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class BSCConstants:
     NAME = "BSC"
     NATIVE_TOKEN = "BNB"
-    RPC = "https://rpc.ankr.com/bsc"
+    RPC = os.getenv("BSC_RPC")
     CHAIN_ID = 56
     STARGATE_CHAIN_ID = 102
 

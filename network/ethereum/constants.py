@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class EthereumConstants:
     NAME = "Ethereum"
     NATIVE_TOKEN = "ETH"
-    RPC = "https://eth.llamarpc.com"
+    RPC = os.getenv("ETHEREUM_RPC")
     CHAIN_ID = 1
     STARGATE_CHAIN_ID = 101
 

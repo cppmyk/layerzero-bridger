@@ -1,7 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class ArbitrumConstants:
     NAME = "Arbitrum"
     NATIVE_TOKEN = "ETH"
-    RPC = "https://arb-mainnet-public.unifra.io"
+    RPC = os.getenv("ARBITRUM_RPC")
     CHAIN_ID = 42161
     STARGATE_CHAIN_ID = 110
 
