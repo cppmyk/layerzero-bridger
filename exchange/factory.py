@@ -3,13 +3,14 @@ from dotenv import load_dotenv
 
 from exchange.binance.binance import Binance
 from exchange.okex.okex import Okex
+from exchange.exchange import Exchange
 
 load_dotenv()
 
 
 class ExchangeFactory:
     @staticmethod
-    def create(exchange_name):
+    def create(exchange_name) -> Exchange:
         if exchange_name.lower() == "binance":
             api_key = os.getenv("BINANCE_API_KEY")
             secret_key = os.getenv("BINANCE_SECRET_KEY")

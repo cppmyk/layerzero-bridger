@@ -31,7 +31,7 @@ class Exchange:
     def __init__(self, name: str, api_key: str, secret_key: str, ccxt_args: dict) -> None:
         self.name = name
         ccxt_exchange = getattr(ccxt, name)
-        self.exchange = ccxt_exchange({
+        self._ccxt_exc = ccxt_exchange({
             'apiKey': api_key,
             'secret': secret_key,
             'enableRateLimit': True,
@@ -42,7 +42,7 @@ class Exchange:
         """ Method that initiates withdraw funds from the exchange """
         raise NotSupported(f"{self.name} withdraw() is not implemented")
 
-    def wait_for_withdraw_to_finish(self, withdraw_id: str, timeout: int = 1800):
+    def wait_for_withdraw_to_finish(self, withdraw_id: str, timeout: int = 1800) -> None:
         start_time = time.time()
 
         logger.info(f'Waiting for {withdraw_id} withdraw to be sent')
@@ -61,13 +61,17 @@ class Exchange:
 
             time.sleep(10)  # Wait for 10 seconds before checking again
 
+    def is_withdraw_supported(self, symbol: str, network: str) -> bool:
+        """ Method that checks if the symbol can be withdrawn """
+        raise NotSupported(f"{self.name} is_withdraw_supported() is not implemented")
+
     def get_withdraw_info(self, symbol: str, network: str) -> WithdrawInfo:
         """ Method that fetches symbol withdraw information"""
         raise NotSupported(f"{self.name} get_withdraw_info() is not implemented")
 
     def get_funding_balance(self, symbol: str) -> float:
         """ Method that fetches non-trading balance from which we can initiate withdraw (can be named differently) """
-        raise NotSupported(f"{self.name} get_withdraw_info() is not implemented")
+        raise NotSupported(f"{self.name} get_funding_balance() is not implemented")
 
     def get_withdraw_status(self, withdraw_id: str) -> WithdrawStatus:
         """ Method that fetches withdraw status """
@@ -75,7 +79,7 @@ class Exchange:
 
     def buy_token_and_withdraw(self, symbol: str, amount: float, network: str, address: str) -> None:
         """ Method that checks balance of symbol token, buys it if it's not enough and withdraws this token """
-        raise NotSupported(f"{self.name} get_withdraw_info() is not implemented")
+        raise NotSupported(f"{self.name} buy_token_and_withdraw() is not implemented")
 
     @staticmethod
     def _parse_withdraw_status(withdraw_info: dict) -> WithdrawStatus:

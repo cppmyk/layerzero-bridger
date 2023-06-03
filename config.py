@@ -1,5 +1,4 @@
 import os
-from typing import List
 from enum import Enum
 
 from base.errors import ConfigurationError
@@ -46,21 +45,6 @@ class SleepTimings:
 
 # -------- Utility class --------
 class ConfigurationHelper:
-
-    @staticmethod
-    def load_default_keys() -> List[str]:
-        keys = ConfigurationHelper.load_private_keys(DEFAULT_PRIVATE_KEYS_FILE_PATH)
-        if not keys:
-            raise ConfigurationError(
-                f'No private keys were found. Check the contents of the {DEFAULT_PRIVATE_KEYS_FILE_PATH}')
-
-        return keys
-
-    @staticmethod
-    def load_private_keys(file_path: str) -> List[str]:
-        with open(file_path, 'r') as file:
-            return file.read().splitlines()
-
     @staticmethod
     def check_networks_list() -> None:
         if len(SUPPORTED_NETWORKS_STARGATE) == 0:

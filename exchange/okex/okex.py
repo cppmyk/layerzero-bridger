@@ -19,7 +19,7 @@ class Okex(Exchange):
         self.trading_account = 'spot'
 
     def _get_withdraw_infos(self, symbol: str) -> List[WithdrawInfo]:
-        currencies = self.exchange.fetch_currencies()
+        currencies = self._ccxt_exc.fetch_currencies()
         chains_info = currencies[symbol]['networks']
 
         result = []
@@ -30,6 +30,11 @@ class Okex(Exchange):
             result.append(info)
 
         return result
+
+    def is_withdraw_supported(self, symbol: str, network: str) -> bool:
+        if symbol in OkexConstants.TOKENS and network in OkexConstants.TOKENS[symbol]:
+            return True
+        return False
 
     def get_withdraw_info(self, symbol: str, network: str) -> WithdrawInfo:
         okx_network = OkexConstants.NETWORKS[network]
@@ -53,8 +58,8 @@ class Okex(Exchange):
         logger.info(f'Amount with fee: {amount}')
 
         try:
-            result = self.exchange.withdraw(symbol, amount, address,
-                                            {"chain": withdraw_info.chain, 'fee': withdraw_info.fee, 'pwd': "-"})
+            result = self._ccxt_exc.withdraw(symbol, amount, address,
+                                             {"chain": withdraw_info.chain, 'fee': withdraw_info.fee, 'pwd': "-"})
         except Exception as ex:
             if 'Withdrawal address is not whitelisted for verification exemption' in str(ex):
                 raise NotWhitelistedAddress(f'Unable to withdraw {symbol}({network}) to {address}. '
@@ -67,21 +72,21 @@ class Okex(Exchange):
         return str(withdraw_id)
 
     def get_withdraw_status(self, withdraw_id: str) -> WithdrawStatus:
-        withdraw_info = self.exchange.fetch_withdrawal(withdraw_id)
+        withdraw_info = self._ccxt_exc.fetch_withdrawal(withdraw_id)
 
         return self._parse_withdraw_status(withdraw_info)
 
     def transfer_funds(self, symbol: str, amount: float, from_account: str, to_account: str):
         logger.info(f'{symbol} transfer initiated. From {from_account} to {to_account}')
-        result = self.exchange.transfer(symbol, amount, from_account, to_account)
+        result = self._ccxt_exc.transfer(symbol, amount, from_account, to_account)
         logger.debug('Transfer result:', result)
 
     def buy_tokens_with_usdt(self, symbol: str, amount: float) -> float:
         logger.info(f'{symbol} purchase initiated. Amount: {amount}')
         trading_symbol = symbol + '/USDT'
 
-        creation_result = self.exchange.create_market_order(trading_symbol, 'buy', amount)
-        order = self.exchange.fetch_order(creation_result['id'], trading_symbol)
+        creation_result = self._ccxt_exc.create_market_order(trading_symbol, 'buy', amount)
+        order = self._ccxt_exc.fetch_order(creation_result['id'], trading_symbol)
 
         filled = float(order['filled'])
         fee = float(order['fee']['cost'])
@@ -90,7 +95,7 @@ class Okex(Exchange):
         return received_amount
 
     def get_funding_balance(self, symbol: str) -> float:
-        balance = self.exchange.fetch_balance(params={'type': self.funding_account})
+        balance = self._ccxt_exc.fetch_balance(params={'type': self.funding_account})
 
         if symbol not in balance['total']:
             return 0

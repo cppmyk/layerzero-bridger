@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Binance(Exchange):
-    def __init__(self, api_key: str, secret_key: str):
+    def __init__(self, api_key: str, secret_key: str) -> None:
         ccxt_args = {
             'options': {
                 'defaultType': 'spot'
@@ -25,8 +25,12 @@ class Binance(Exchange):
         logger.info(f'{symbol} withdraw initiated. Amount: {amount}. Network: {network}. Address: {address}')
         withdraw_info = self.get_withdraw_info(symbol, network)
 
+        decimals = self._get_precision(symbol)
+        amount = round(amount, decimals)
+        logger.debug(f'Amount rounded to {amount}')
+
         try:
-            result = self.exchange.withdraw(symbol, amount, address, tag=None, params={"network": withdraw_info.chain})
+            result = self._ccxt_exc.withdraw(symbol, amount, address, tag=None, params={"network": withdraw_info.chain})
         except Exception as ex:
             if 'Withdrawal address is not whitelisted for verification exemption' in str(ex):
                 raise NotWhitelistedAddress(f'Unable to withdraw {symbol}({network}) to {address}. '
@@ -39,7 +43,7 @@ class Binance(Exchange):
         return str(withdraw_id)
 
     def _get_withdraw_infos(self, symbol: str) -> List[WithdrawInfo]:
-        currencies = self.exchange.fetch_currencies()
+        currencies = self._ccxt_exc.fetch_currencies()
         chains_info = currencies[symbol]['networks']
 
         result = []
@@ -50,6 +54,11 @@ class Binance(Exchange):
             result.append(info)
 
         return result
+
+    def is_withdraw_supported(self, symbol: str, network: str) -> bool:
+        if symbol in BinanceConstants.TOKENS and network in BinanceConstants.TOKENS[symbol]:
+            return True
+        return False
 
     def get_withdraw_info(self, symbol: str, network: str) -> WithdrawInfo:
         binance_network = BinanceConstants.NETWORKS[network]
@@ -63,7 +72,7 @@ class Binance(Exchange):
         return withdraw_info
 
     def get_withdraw_status(self, withdrawal_id: str) -> WithdrawStatus:
-        withdrawals_info = self.exchange.fetch_withdrawals()
+        withdrawals_info = self._ccxt_exc.fetch_withdrawals()
         withdrawal_info = next((withdrawal for withdrawal in withdrawals_info if withdrawal['id'] == withdrawal_id),
                                None)
 
@@ -74,7 +83,7 @@ class Binance(Exchange):
 
     def _get_min_notional(self, symbol: str) -> float:
         trading_symbol = symbol + '/USDT'
-        markets = self.exchange.load_markets()
+        markets = self._ccxt_exc.load_markets()
 
         market = markets[trading_symbol]
         minimal_notional = market['info']['filters'][6]['minNotional']
@@ -82,7 +91,7 @@ class Binance(Exchange):
         return float(minimal_notional)
 
     def _get_precision(self, symbol: str) -> int:
-        currencies = self.exchange.fetch_currencies()
+        currencies = self._ccxt_exc.fetch_currencies()
         currency_info = currencies[symbol]
         decimals = int(currency_info['precision'])
 
@@ -92,7 +101,7 @@ class Binance(Exchange):
         logger.info(f'{symbol} purchase initiated. Amount: {amount}')
         trading_symbol = symbol + '/USDT'
 
-        ticker = self.exchange.fetch_ticker(trading_symbol)
+        ticker = self._ccxt_exc.fetch_ticker(trading_symbol)
         price = ticker['last']
 
         notional = amount * price
@@ -105,7 +114,7 @@ class Binance(Exchange):
 
         price *= 1.05  # 5% more to perform market buy
 
-        creation_result = self.exchange.create_limit_buy_order(trading_symbol, amount, price)
+        creation_result = self._ccxt_exc.create_limit_buy_order(trading_symbol, amount, price)
 
         filled = float(creation_result['filled'])
         fee_rate = 0.001
@@ -115,7 +124,7 @@ class Binance(Exchange):
         return received_amount
 
     def get_funding_balance(self, symbol: str) -> float:
-        balance = self.exchange.fetch_balance()
+        balance = self._ccxt_exc.fetch_balance()
 
         if symbol not in balance:
             return 0
@@ -141,8 +150,5 @@ class Binance(Exchange):
             if bought_amount < amount:
                 amount_to_withdraw = bought_amount
 
-        decimals = self._get_precision(symbol)
-        rounded_amount = round(amount_to_withdraw, decimals)
-
-        withdraw_id = self.withdraw(symbol, rounded_amount, network, address)
+        withdraw_id = self.withdraw(symbol, amount_to_withdraw, network, address)
         self.wait_for_withdraw_to_finish(withdraw_id)
