@@ -3,6 +3,8 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 
+import ccxt
+
 from base.errors import NotSupported, WithdrawCanceled, WithdrawTimeout
 
 logger = logging.getLogger(__name__)
@@ -26,8 +28,15 @@ class WithdrawInfo:
 # Base exchange class
 class Exchange:
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, api_key: str, secret_key: str, ccxt_args: dict) -> None:
         self.name = name
+        ccxt_exchange = getattr(ccxt, name)
+        self.exchange = ccxt_exchange({
+            'apiKey': api_key,
+            'secret': secret_key,
+            'enableRateLimit': True,
+            **ccxt_args
+        })
 
     def withdraw(self, symbol: str, amount: float, network: str, address: str) -> WithdrawStatus:
         """ Method that initiates withdraw funds from the exchange """

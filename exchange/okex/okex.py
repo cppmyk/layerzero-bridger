@@ -12,13 +12,9 @@ logger = logging.getLogger(__name__)
 
 class Okex(Exchange):
     def __init__(self, api_key: str, secret_key: str, api_password: str):
-        super().__init__('okex')
+        ccxt_args = {'password': api_password}
+        super().__init__('okex', api_key, secret_key, ccxt_args)
 
-        self.exchange = ccxt.okex({
-            'apiKey': api_key,
-            'secret': secret_key,
-            'password': api_password,
-        })
         self.funding_account = 'funding'
         self.trading_account = 'spot'
 

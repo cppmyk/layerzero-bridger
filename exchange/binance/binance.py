@@ -12,15 +12,12 @@ logger = logging.getLogger(__name__)
 
 class Binance(Exchange):
     def __init__(self, api_key: str, secret_key: str):
-        super().__init__('binance')
-
-        self.exchange = ccxt.binance({
-            'apiKey': api_key,
-            'secret': secret_key,
+        ccxt_args = {
             'options': {
                 'defaultType': 'spot'
             }
-        })
+        }
+        super().__init__('binance', api_key, secret_key, ccxt_args)
 
     def withdraw(self, symbol: str, amount: float, network: str, address: str) -> str:
         """ Method that initiates the withdrawal and returns the withdrawal id """
@@ -104,6 +101,8 @@ class Binance(Exchange):
             amount *= 1.05
             notional = amount * price
 
+        logger.info(f'{symbol} final amount to buy - {amount}')
+
         price *= 1.05  # 5% more to perform market buy
 
         creation_result = self.exchange.create_limit_buy_order(trading_symbol, amount, price)
@@ -122,6 +121,8 @@ class Binance(Exchange):
             return 0
         token_balance = float(balance[symbol]['free'])
 
+        logger.debug(f'{symbol} funding balance - {token_balance}')
+
         return token_balance
 
     def buy_token_and_withdraw(self, symbol: str, amount: float, network: str, address: str) -> None:
@@ -131,12 +132,14 @@ class Binance(Exchange):
             amount = withdraw_info.min_amount
         amount += withdraw_info.fee * 3
 
+        amount_to_withdraw = amount
+
         balance = self.get_funding_balance(symbol)
         if balance < amount:
             # Multiplying to avoid decimals casting
-            amount_to_withdraw = self.buy_tokens_with_usdt(symbol, amount) * 0.99
-        else:
-            amount_to_withdraw = amount
+            bought_amount = self.buy_tokens_with_usdt(symbol, amount) * 0.99
+            if bought_amount < amount:
+                amount_to_withdraw = bought_amount
 
         decimals = self._get_precision(symbol)
         rounded_amount = round(amount_to_withdraw, decimals)
