@@ -23,8 +23,8 @@ class Polygon(EVMNetwork):
 
     def get_transaction_gas_params(self) -> dict:
         gas_params = {
-            'maxFeePerGas': self.get_current_gas() * 2,
-            'maxPriorityFeePerGas': self.w3.eth.max_priority_fee
+            'maxFeePerGas': self.get_current_gas() * 3,
+            'maxPriorityFeePerGas': int(self.w3.eth.max_priority_fee * 1.5)
         }
 
         return gas_params
