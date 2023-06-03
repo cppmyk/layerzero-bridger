@@ -4,11 +4,11 @@ import threading
 
 def setup_logger(level=logging.INFO):
     """Setup main console handler."""
-    logging.getLogger('web3').setLevel(logging.INFO)
-    logging.getLogger('urllib3').setLevel(logging.INFO)
+    logging.getLogger("web3").setLevel(logging.INFO)
+    logging.getLogger("urllib3").setLevel(logging.INFO)
     logging.getLogger("ccxt").setLevel(logging.INFO)
 
-    formatter = logging.Formatter('[%(asctime)s] [%(levelname)-7s] [%(threadName)-10s] %(message)s')
+    formatter = logging.Formatter("[%(asctime)s] [%(levelname)-7s] [%(threadName)-10s] %(message)s")
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
@@ -35,18 +35,18 @@ class ThreadLogFilter(logging.Filter):
 def setup_thread_logger(path, log_level=logging.DEBUG):
     """Add a log handler to separate file for current thread."""
     thread_name = threading.current_thread().name
-    log_file = f'{path}/{thread_name}.log'
-    file_handler = logging.FileHandler(log_file)
+    with open(f"{path}/{thread_name}.log", "w") as log_file:
+        file_handler = logging.FileHandler(log_file.name)
 
-    file_handler.setLevel(log_level)
+        file_handler.setLevel(log_level)
 
-    formatter = logging.Formatter('[%(asctime)s] [%(levelname)-7s] %(message)s')
-    file_handler.setFormatter(formatter)
+        formatter = logging.Formatter("[%(asctime)s] [%(levelname)-7s] %(message)s")
+        file_handler.setFormatter(formatter)
 
-    log_filter = ThreadLogFilter(thread_name)
-    file_handler.addFilter(log_filter)
+        log_filter = ThreadLogFilter(thread_name)
+        file_handler.addFilter(log_filter)
 
-    logger = logging.getLogger()
-    logger.addHandler(file_handler)
+        logger = logging.getLogger()
+        logger.addHandler(file_handler)
 
     return file_handler
