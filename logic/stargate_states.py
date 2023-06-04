@@ -324,8 +324,11 @@ class StargateSwapState(State):
 
         bridge_helper = StargateBridgeHelper(thread.account, self.src_network, self.dst_network,
                                              self.src_stablecoin, self.dst_stablecoin, amount, STARGATE_SLIPPAGE)
-        bridge_helper.make_bridge()
+        bridge_result = bridge_helper.make_bridge()
 
-        logger.info("Bridge finished")
+        if bridge_result:
+            logger.info("Stargate bridge finished successfully")
+        else:
+            logger.info("Stargate bridge finished with error")
 
         thread.set_state(CheckStablecoinBalanceState())
