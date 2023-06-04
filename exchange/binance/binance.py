@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import List
 
 import ccxt
@@ -37,7 +38,7 @@ class Binance(Exchange):
                                             f'The address must be added to the whitelist') from ex
             raise
 
-        logger.debug('Withdraw result:', result)
+        logger.debug(f'Withdraw result: {result}')
         withdraw_id = result['id']
 
         return str(withdraw_id)
