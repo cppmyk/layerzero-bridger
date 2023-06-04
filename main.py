@@ -6,7 +6,7 @@ from typing import Any
 
 from base.errors import NotWhitelistedAddress
 from logic import AccountThread
-from config import ConfigurationHelper, DEFAULT_PRIVATE_KEYS_FILE_PATH
+from config import ConfigurationHelper, DEFAULT_PRIVATE_KEYS_FILE_PATH, BridgerMode
 from logger import setup_logger
 from exchange import ExchangeFactory
 
@@ -15,7 +15,7 @@ from utility import WalletHelper
 
 class LayerZeroApp:
 
-    def __init__(self):
+    def __init__(self) -> None:
         setup_logger()
         self.wh = WalletHelper()
 
@@ -68,10 +68,11 @@ class LayerZeroApp:
         config = ConfigurationHelper()
         config.check_configuration()
 
+        mode = BridgerMode(args.mode)
         accounts = []
 
         for account_id, private_key in enumerate(self.wh.load_private_keys(args.private_keys)):
-            accounts.append(AccountThread(account_id, private_key))
+            accounts.append(AccountThread(account_id, private_key, mode))
             accounts[account_id].start()
 
         for account in accounts:
@@ -112,7 +113,7 @@ class LayerZeroApp:
         withdraw_parser.set_defaults(func=self.withdraw_funds)
 
     def create_run_bridger_parser(self, subparsers: Any) -> None:
-        run_parser = subparsers.add_parser("run", help="Run the Ethereum application")
+        run_parser = subparsers.add_parser("run", help="Run the LayerZero bridger")
         run_parser.add_argument("mode", choices=["stargate", "btcb", "testnet"],
                                 help="Running mode (stargate, btcb, testnet)")
         run_parser.add_argument("--private-keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH, dest="private_keys",

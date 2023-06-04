@@ -8,6 +8,7 @@ from typing import List
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
 from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
     RefuelMode
+from logic.state import State
 from network import EVMNetwork
 from utility import Stablecoin
 from network.balance_helper import BalanceHelper
@@ -17,14 +18,8 @@ from stargate import StargateBridgeHelper, StargateUtils
 logger = logging.getLogger(__name__)
 
 
-# State interface defining the behavior of different states
-class State:
-    def handle(self, thread):
-        pass
-
-
 # State for waiting before start to randomize start time
-class SleepBeforeStartState(State):
+class SleepBeforeStartStargateBridgerState(State):
     def __init__(self):
         pass
 

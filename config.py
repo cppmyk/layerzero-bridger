@@ -20,6 +20,12 @@ MIN_STABLECOIN_BALANCE = 1  # Minimal balance to bridge
 DEFAULT_PRIVATE_KEYS_FILE_PATH = os.getenv("DEFAULT_PRIVATE_KEYS_FILE_PATH")
 
 
+class BridgerMode(Enum):
+    STARGATE = "stargate"
+    BTCB = "btcb"
+    TESTNET = "testnet"
+
+
 class RefuelMode(Enum):
     MANUAL = 1  # Manual refuel
     OKEX = 2  # Automatic refuel from the Okex exchange
