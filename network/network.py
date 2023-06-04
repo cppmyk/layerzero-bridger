@@ -83,6 +83,23 @@ class EVMNetwork(Network):
 
         return self.w3.eth.get_transaction_count(Web3.to_checksum_address(address))
 
+    @staticmethod
+    def check_tx_result(result: TransactionStatus, name: str) -> bool:
+        """ Utility method that checks transaction result and returns false if it's not mined or failed """
+
+        if result == TransactionStatus.SUCCESS:
+            logger.info(f"{name} transaction succeed")
+            return True
+        if result == TransactionStatus.NOT_FOUND:
+            logger.info(f"{name} transaction can't be found in the blockchain"
+                        " for a log time. Consider changing fee settings")
+            return False
+        if result == TransactionStatus.FAILED:
+            logger.info(f"{name} transaction failed")
+            return False
+
+        return False
+
     def wait_for_transaction(self, tx_hash: Union[Hash32, HexBytes, HexStr], timeout: int = 300) -> TransactionStatus:
         start_time = time.time()
 

@@ -75,26 +75,13 @@ class StargateBridgeHelper:
         if not self._is_bridge_possible():
             return False
 
-        self._approve_stablecoin_usage(self.amount)
+        if not self._approve_stablecoin_usage(self.amount):
+            return False
 
         tx_hash = self._send_swap_transaction()
         result = self.src_network.wait_for_transaction(tx_hash)
 
-        self._check_tx_result(result, "Stargate swap")
-
-    @staticmethod
-    def _check_tx_result(result: TransactionStatus, name: str) -> None:
-        """ Utility method that checks transaction result and raises exceptions if it's not mined or failed.
-         Probably should be moved to the EVMNetwork class """
-
-        if result == TransactionStatus.NOT_FOUND:
-            raise TransactionNotFound(f"{name} transaction can't be found in the blockchain"
-                                      " for a log time. Consider changing fee settings")
-        if result == TransactionStatus.FAILED:
-            raise TransactionFailed(f"{name} transaction failed")
-
-        if result == TransactionStatus.SUCCESS:
-            logger.info(f"{name} transaction succeed")
+        return self.src_network.check_tx_result(result, "Stargate swap")
 
     def _send_swap_transaction(self) -> HexBytes:
         """ Utility method that signs and sends tx - Swap src_pool_id token from src_network chain to dst_chain_id """
@@ -154,14 +141,14 @@ class StargateBridgeHelper:
 
         return True
 
-    def _approve_stablecoin_usage(self, amount: int) -> None:
+    def _approve_stablecoin_usage(self, amount: int) -> bool:
         allowance = self.src_network.get_token_allowance(self.src_stablecoin.contract_address, self.account.address,
                                                          self.src_network.stargate_router_address)
         if allowance >= amount:
-            return
+            return True
 
         tx_hash = self.src_network.approve_token_usage(self.account.key, self.src_stablecoin.contract_address,
                                                        self.src_network.stargate_router_address, amount)
         result = self.src_network.wait_for_transaction(tx_hash)
 
-        self._check_tx_result(result, f"Approve {self.src_stablecoin.symbol} usage")
+        return self.src_network.check_tx_result(result, f"Approve {self.src_stablecoin.symbol} usage")
