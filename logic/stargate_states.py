@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 # State for waiting before start to randomize start time
 class SleepBeforeStartStargateBridgerState(State):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         sleep_time = random.randint(SleepTimings.AFTER_START_RANGE[0], SleepTimings.AFTER_START_RANGE[1])
 
         logger.info(f"Sleeping {sleep_time} seconds before start")
@@ -34,10 +34,10 @@ class SleepBeforeStartStargateBridgerState(State):
 
 # State for waiting for the stablecoin deposit
 class WaitForStablecoinDepositState(State):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Waiting for stablecoin deposit")
         time.sleep(SleepTimings.BALANCE_RECHECK_TIME)
 
@@ -81,7 +81,7 @@ class CheckStablecoinBalanceState(State):
 
         return result
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Checking stablecoin balance")
 
         networks = self.find_networks_with_balance(thread)
@@ -101,11 +101,11 @@ class CheckStablecoinBalanceState(State):
 
 # State for choosing a random destination network
 class ChooseDestinationNetworkState(State):
-    def __init__(self, src_network: EVMNetwork, src_stablecoin: Stablecoin):
+    def __init__(self, src_network: EVMNetwork, src_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.src_stablecoin = src_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Randomizing destination network")
 
         networks = SUPPORTED_NETWORKS_STARGATE.copy()
@@ -122,12 +122,12 @@ class ChooseDestinationNetworkState(State):
 
 # State for choosing a random destination stablecoin
 class ChooseDestinationStablecoinState(State):
-    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork, src_stablecoin: Stablecoin):
+    def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork, src_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Choosing destination stablecoin")
 
         if len(self.dst_network.supported_stablecoins) == 0:
@@ -146,13 +146,13 @@ class ChooseDestinationStablecoinState(State):
 # State for deciding whether gas will be refueled automatically or manually
 class RefuelDecisionState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Checking possible refuel options")
 
         # TODO: Add auto refuel with Bungee/WooFi
@@ -168,7 +168,7 @@ class RefuelDecisionState(State):
 # State for waiting for a manual native token deposit (in case the auto-refuel failed or disabled)
 class WaitForManualRefuelState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
@@ -184,13 +184,13 @@ class WaitForManualRefuelState(State):
 # State for waiting before the exchange withdraw to make an account unique
 class SleepBeforeExchangeRefuelState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         sleep_time = random.randint(SleepTimings.BEFORE_WITHDRAW_RANGE[0], SleepTimings.BEFORE_WITHDRAW_RANGE[1])
 
         withdraw_dt = datetime.datetime.fromtimestamp(time.time() + sleep_time)
@@ -204,7 +204,7 @@ class SleepBeforeExchangeRefuelState(State):
 # State for refueling native token from exchange to cover gas fees
 class RefuelWithExchangeState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
@@ -226,7 +226,7 @@ class RefuelWithExchangeState(State):
             logger.warning(f"WARNING! Address {thread.account.address} is not whitelisted to withdraw "
                            f"{self.src_network.native_token} in {self.src_network.name} network")
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info(f"Exchange refueling started")
 
         layer_zero_fee = StargateUtils.estimate_layerzero_swap_fee(self.src_network, self.dst_network,
@@ -239,6 +239,12 @@ class RefuelWithExchangeState(State):
 
         amount_to_withdraw = mul * (layer_zero_fee + swap_price)
 
+        # Multiplier to randomize withdraw amount
+        multiplier = random.uniform(1, 1.5)
+        amount_to_withdraw *= multiplier
+        decimals = random.randint(4, 7)
+        amount_to_withdraw = round(amount_to_withdraw, decimals)
+
         logger.info(f'To withdraw: {amount_to_withdraw}')
         self.refuel(thread, amount_to_withdraw)
 
@@ -249,7 +255,7 @@ class RefuelWithExchangeState(State):
 # TODO
 class RefuelWithBungeeState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
@@ -259,7 +265,7 @@ class RefuelWithBungeeState(State):
 # State for checking the native token balance
 class CheckNativeTokenBalanceForGasState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
@@ -282,13 +288,13 @@ class CheckNativeTokenBalanceForGasState(State):
 # State for waiting before every bridge to make an account unique
 class SleepBeforeBridgeState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         sleep_time = random.randint(SleepTimings.BEFORE_BRIDGE_RANGE[0], SleepTimings.BEFORE_BRIDGE_RANGE[1])
 
         next_swap_dt = datetime.datetime.fromtimestamp(time.time() + sleep_time)
@@ -302,13 +308,13 @@ class SleepBeforeBridgeState(State):
 # State for swapping tokens
 class StargateSwapState(State):
     def __init__(self, src_network: EVMNetwork, dst_network: EVMNetwork,
-                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin):
+                 src_stablecoin: Stablecoin, dst_stablecoin: Stablecoin) -> None:
         self.src_network = src_network
         self.dst_network = dst_network
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         balance_helper = BalanceHelper(self.src_network, thread.account.address)
         amount = balance_helper.get_stablecoin_balance(self.src_stablecoin)
 
