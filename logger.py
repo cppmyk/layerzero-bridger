@@ -32,7 +32,7 @@ class ThreadLogFilter(logging.Filter):
         return record.threadName == self.thread_name
 
 
-def setup_thread_logger(path, log_level=logging.DEBUG):
+def setup_thread_logger(path, log_level=logging.INFO):
     """Add a log handler to separate file for current thread."""
     thread_name = threading.current_thread().name
     log_file = f'{path}/{thread_name}.log'
