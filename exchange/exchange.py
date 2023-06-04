@@ -43,6 +43,8 @@ class Exchange:
         raise NotSupported(f"{self.name} withdraw() is not implemented")
 
     def wait_for_withdraw_to_finish(self, withdraw_id: str, timeout: int = 1800) -> None:
+        time.sleep(10)  # Sleep to let the exchange process the withdrawal request
+
         start_time = time.time()
 
         logger.info(f'Waiting for {withdraw_id} withdraw to be sent')
