@@ -9,7 +9,7 @@ class ArbitrumConstants:
     NATIVE_TOKEN = "ETH"
     RPC = os.getenv("ARBITRUM_RPC")
     CHAIN_ID = 42161
-    STARGATE_CHAIN_ID = 110
+    LAYERZERO_CHAIN_ID = 110
 
     # Contracts
     USDC_CONTRACT_ADDRESS = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"

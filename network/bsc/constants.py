@@ -9,7 +9,7 @@ class BSCConstants:
     NATIVE_TOKEN = "BNB"
     RPC = os.getenv("BSC_RPC")
     CHAIN_ID = 56
-    STARGATE_CHAIN_ID = 102
+    LAYERZERO_CHAIN_ID = 102
 
     # Contracts
     BUSD_CONTRACT_ADDRESS = "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56"

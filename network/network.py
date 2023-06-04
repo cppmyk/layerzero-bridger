@@ -25,12 +25,12 @@ class TransactionStatus(Enum):
 
 class Network:
 
-    def __init__(self, name: str, native_token: str, rpc: str, stargate_chain_id: int,
+    def __init__(self, name: str, native_token: str, rpc: str, layerzero_chain_id: int,
                  stargate_router_address: str) -> None:
         self.name = name
         self.native_token = native_token
         self.rpc = rpc
-        self.stargate_chain_id = stargate_chain_id
+        self.layerzero_chain_id = layerzero_chain_id
         self.stargate_router_address = stargate_router_address
 
     def get_balance(self, address: str) -> int:
@@ -57,9 +57,9 @@ class Network:
 class EVMNetwork(Network):
 
     def __init__(self, name: str, native_token: str, rpc: str,
-                 stargate_chain_id: int, stargate_router_address: str,
+                 layerzero_chain_id: int, stargate_router_address: str,
                  supported_stablecoins: Dict[str, Stablecoin]) -> None:
-        super().__init__(name, native_token, rpc, stargate_chain_id, stargate_router_address)
+        super().__init__(name, native_token, rpc, layerzero_chain_id, stargate_router_address)
         self.w3 = Web3(HTTPProvider(rpc))
         self.supported_stablecoins = supported_stablecoins
 

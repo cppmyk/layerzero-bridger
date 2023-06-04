@@ -9,7 +9,7 @@ class OptimismConstants:
     NATIVE_TOKEN = "ETH"
     RPC = os.getenv("OPTIMISM_RPC")
     CHAIN_ID = 10
-    STARGATE_CHAIN_ID = 111
+    LAYERZERO_CHAIN_ID = 111
 
     # Contracts
     USDC_CONTRACT_ADDRESS = "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"

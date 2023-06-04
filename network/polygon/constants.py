@@ -9,7 +9,7 @@ class PolygonConstants:
     NATIVE_TOKEN = "MATIC"
     RPC = os.getenv("POLYGON_RPC")
     CHAIN_ID = 137
-    STARGATE_CHAIN_ID = 109
+    LAYERZERO_CHAIN_ID = 109
 
     # Contracts
     USDC_CONTRACT_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"

@@ -9,11 +9,11 @@ class Optimism(EVMNetwork):
     def __init__(self):
         supported_stablecoins = {
             'USDC': Stablecoin('USDC', OptimismConstants.USDC_CONTRACT_ADDRESS, OptimismConstants.USDC_DECIMALS,
-                               OptimismConstants.STARGATE_CHAIN_ID, StargateConstants.POOLS['USDC'])
+                               OptimismConstants.LAYERZERO_CHAIN_ID, StargateConstants.POOLS['USDC'])
         }
 
         super().__init__(OptimismConstants.NAME, OptimismConstants.NATIVE_TOKEN, OptimismConstants.RPC,
-                         OptimismConstants.STARGATE_CHAIN_ID, OptimismConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
+                         OptimismConstants.LAYERZERO_CHAIN_ID, OptimismConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
     def get_approve_gas_limit(self) -> int:

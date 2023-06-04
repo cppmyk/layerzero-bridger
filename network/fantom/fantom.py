@@ -9,11 +9,11 @@ class Fantom(EVMNetwork):
     def __init__(self):
         supported_stablecoins = {
             'USDC': Stablecoin('USDC', FantomConstants.USDC_CONTRACT_ADDRESS, FantomConstants.USDC_DECIMALS,
-                               FantomConstants.STARGATE_CHAIN_ID, StargateConstants.POOLS['USDC'])
+                               FantomConstants.LAYERZERO_CHAIN_ID, StargateConstants.POOLS['USDC'])
         }
 
         super().__init__(FantomConstants.NAME, FantomConstants.NATIVE_TOKEN, FantomConstants.RPC,
-                         FantomConstants.STARGATE_CHAIN_ID, FantomConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
+                         FantomConstants.LAYERZERO_CHAIN_ID, FantomConstants.STARGATE_ROUTER_CONTRACT_ADDRESS,
                          supported_stablecoins)
 
     def get_approve_gas_limit(self) -> int:

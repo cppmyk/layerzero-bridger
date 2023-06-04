@@ -9,7 +9,7 @@ class EthereumConstants:
     NATIVE_TOKEN = "ETH"
     RPC = os.getenv("ETHEREUM_RPC")
     CHAIN_ID = 1
-    STARGATE_CHAIN_ID = 101
+    LAYERZERO_CHAIN_ID = 101
 
     # Contracts
     USDC_CONTRACT_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"

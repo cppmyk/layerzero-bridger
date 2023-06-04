@@ -9,7 +9,7 @@ class AvalancheConstants:
     NATIVE_TOKEN = "AVAX"
     RPC = os.getenv("AVALANCHE_RPC")
     CHAIN_ID = 43114
-    STARGATE_CHAIN_ID = 106
+    LAYERZERO_CHAIN_ID = 106
 
     # Contracts
     USDC_CONTRACT_ADDRESS = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
