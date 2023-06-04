@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import List
 
@@ -25,13 +26,24 @@ class WalletHelper:
 
     def load_private_keys(self, file_path: str) -> List[str]:
         with open(file_path, 'r') as file:
-            return file.read().splitlines()
+            keys = file.read().splitlines()
+            filtered = [s for s in keys if s]
+            return filtered
+
+    def _prepare_keys_directory(self) -> str:
+        keys_dir = 'generated_keys'
+
+        if not os.path.exists(keys_dir):
+            os.makedirs(keys_dir)
+
+        return keys_dir
 
     def to_txt(self, private_keys: List[str], filename: str = "") -> None:
         if not filename:
+            keys_dir = self._prepare_keys_directory()
             current_date = datetime.now().strftime('%Y-%m-%d')
             current_time = datetime.now().strftime('%H-%M-%S')
-            filename = f"private_keys_{current_date}_{current_time}.txt"
+            filename = f"{keys_dir}/private_keys_{current_date}_{current_time}.txt"
 
         with open(filename, 'a') as file:
             for key in private_keys:
