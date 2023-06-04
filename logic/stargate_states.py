@@ -53,7 +53,7 @@ class NetworkWithStablecoinBalance:
 
 # State for checking the stablecoin balance
 class CheckStablecoinBalanceState(State):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def is_enough_balance(self, balance_helper: BalanceHelper, stablecoin: Stablecoin) -> bool:
@@ -174,7 +174,7 @@ class WaitForManualRefuelState(State):
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info(f"{self.src_network.name}. Manual refuel chosen. Waiting for the native token deposit")
         time.sleep(SleepTimings.BALANCE_RECHECK_TIME)
         thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
@@ -271,11 +271,11 @@ class CheckNativeTokenBalanceForGasState(State):
         self.src_stablecoin = src_stablecoin
         self.dst_stablecoin = dst_stablecoin
 
-    def handle(self, thread):
+    def handle(self, thread) -> None:
         logger.info("Checking native token balance")
 
-        if StargateUtils.is_enough_native_token_balance_for_stargate_swap_fee(self.src_network, self.dst_network,
-                                                                              thread.account.address):
+        if StargateUtils.is_enough_native_balance_for_swap_fee(self.src_network, self.dst_network,
+                                                               thread.account.address):
             logger.info("Enough native token amount on source chain. Moving to the swap")
             thread.set_state(SleepBeforeBridgeState(self.src_network, self.dst_network,
                                                     self.src_stablecoin, self.dst_stablecoin))

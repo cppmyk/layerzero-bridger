@@ -4,12 +4,11 @@ from hexbytes import HexBytes
 from web3 import Web3
 
 from abi import STARGATE_ROUTER_ABI
-from network.network import EVMNetwork, TransactionStatus
+from network.network import EVMNetwork
 from utility import Stablecoin
 
 from stargate.constants import StargateConstants
 from eth_account.signers.local import LocalAccount
-from base.errors import TransactionFailed, TransactionNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +45,7 @@ class StargateUtils:
         return gas_price
 
     @staticmethod
-    def is_enough_native_token_balance_for_stargate_swap_fee(src_network: EVMNetwork,
-                                                             dst_network: EVMNetwork, address: str):
+    def is_enough_native_balance_for_swap_fee(src_network: EVMNetwork, dst_network: EVMNetwork, address: str):
         account_balance = src_network.get_balance(address)
         gas_price = StargateUtils.estimate_swap_gas_price(src_network)
         layerzero_fee = StargateUtils.estimate_layerzero_swap_fee(src_network, dst_network, address)
@@ -130,8 +128,8 @@ class StargateBridgeHelper:
     def _is_bridge_possible(self) -> bool:
         """ Method that checks account balance on the source chain and decides if it is possible to make bridge """
 
-        if not StargateUtils.is_enough_native_token_balance_for_stargate_swap_fee(self.src_network, self.dst_network,
-                                                                                  self.account.address):
+        if not StargateUtils.is_enough_native_balance_for_swap_fee(self.src_network, self.dst_network,
+                                                                   self.account.address):
             return False
 
         stablecoin_balance = self.src_network.get_token_balance(self.src_stablecoin.contract_address,
