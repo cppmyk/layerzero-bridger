@@ -40,6 +40,8 @@ class StargateUtils:
         approve_gas_limit = network.get_approve_gas_limit()
         max_overall_gas_limit = StargateConstants.get_max_randomized_swap_gas_limit(network.name) + approve_gas_limit
 
+        # Optimism fee should be calculated in a different way.
+        # Read more: https://community.optimism.io/docs/developers/build/transaction-fees/#
         gas_price = max_overall_gas_limit * network.get_current_gas()
 
         return gas_price
