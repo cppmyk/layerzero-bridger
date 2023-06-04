@@ -2,11 +2,13 @@ import logging
 import datetime
 import random
 import time
+import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
 from typing import List
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
-from config import SUPPORTED_NETWORKS_STARGATE, STARGATE_SLIPPAGE, MIN_STABLECOIN_BALANCE, REFUEL_MODE, SleepTimings, \
+from config import SUPPORTED_NETWORKS_STARGATE, SleepTimings, \
     RefuelMode
 from logic.state import State
 from network import EVMNetwork
@@ -16,6 +18,7 @@ from exchange import ExchangeFactory
 from stargate import StargateBridgeHelper, StargateUtils
 
 logger = logging.getLogger(__name__)
+load_dotenv()
 
 
 # State for waiting before start to randomize start time
@@ -58,7 +61,8 @@ class CheckStablecoinBalanceState(State):
 
     def is_enough_balance(self, balance_helper: BalanceHelper, stablecoin: Stablecoin) -> bool:
         balance = balance_helper.get_stablecoin_balance(stablecoin)
-        min_balance = MIN_STABLECOIN_BALANCE * 10 ** stablecoin.decimals
+        min_balance = float(os.getenv('STARGATE_MIN_STABLECOIN_BALANCE')) * 10 ** stablecoin.decimals
+        min_balance = int(min_balance)
 
         logger.info(f'{balance_helper.network.name}. {stablecoin.symbol} '
                     f'balance - {balance / 10 ** stablecoin.decimals}')
@@ -157,7 +161,7 @@ class RefuelDecisionState(State):
 
         # TODO: Add auto refuel with Bungee/WooFi
 
-        if REFUEL_MODE == RefuelMode.OKEX or REFUEL_MODE == RefuelMode.BINANCE:
+        if thread.refuel_mode == RefuelMode.OKEX or thread.refuel_mode == RefuelMode.BINANCE:
             thread.set_state(SleepBeforeExchangeRefuelState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, self.dst_stablecoin))
         else:
@@ -213,7 +217,7 @@ class RefuelWithExchangeState(State):
     def refuel(self, thread, amount: float) -> None:
         factory = ExchangeFactory()
 
-        if REFUEL_MODE == RefuelMode.OKEX:
+        if thread.refuel_mode == RefuelMode.OKEX:
             exchange = factory.create("okex")
         else:
             exchange = factory.create("binance")
@@ -323,7 +327,8 @@ class StargateSwapState(State):
                     f"{self.dst_stablecoin.symbol}({self.dst_network.name})")
 
         bridge_helper = StargateBridgeHelper(thread.account, self.src_network, self.dst_network,
-                                             self.src_stablecoin, self.dst_stablecoin, amount, STARGATE_SLIPPAGE)
+                                             self.src_stablecoin, self.dst_stablecoin, amount,
+                                             float(os.getenv('STARGATE_SLIPPAGE', 0.01)))
         bridge_result = bridge_helper.make_bridge()
 
         if bridge_result:

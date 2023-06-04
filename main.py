@@ -1,4 +1,5 @@
 import argparse
+import logging
 import random
 import sys
 import time
@@ -6,11 +7,13 @@ from typing import Any
 
 from base.errors import NotWhitelistedAddress
 from logic import AccountThread
-from config import ConfigurationHelper, DEFAULT_PRIVATE_KEYS_FILE_PATH, BridgerMode
+from config import ConfigurationHelper, DEFAULT_PRIVATE_KEYS_FILE_PATH, BridgerMode, RefuelMode
 from logger import setup_logger
 from exchange import ExchangeFactory
 
 from utility import WalletHelper
+
+logger = logging.getLogger(__name__)
 
 
 class LayerZeroApp:
@@ -19,9 +22,23 @@ class LayerZeroApp:
         setup_logger()
         self.wh = WalletHelper()
 
+    def main(self) -> None:
+        parser = argparse.ArgumentParser(description="LayerZeroApp CLI")
+        subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
+
+        self._create_generate_parser(subparsers)
+        self._create_withdraw_parser(subparsers)
+        self._create_run_bridger_parser(subparsers)
+
+        args = parser.parse_args()
+        if hasattr(args, "func"):
+            args.func(args)
+        else:
+            parser.print_help()
+
     def generate_private_keys(self, args: argparse.Namespace) -> None:
         if args.num_keys <= 0:
-            print("Number of keys must be a positive integer")
+            logger.info("Number of keys must be a positive integer")
             sys.exit(1)
 
         filename = args.filename if args.filename else ""
@@ -41,16 +58,16 @@ class LayerZeroApp:
         addresses = self.wh.resolve_addresses(private_keys)
 
         if not addresses:
-            print('You should specify at least 1 address for the withdrawal')
+            logger.info('You should specify at least 1 address for the withdrawal')
             sys.exit(1)
 
         exchange = ExchangeFactory.create(args.exchange)
 
         if not exchange.is_withdraw_supported(token, network):
-            print(f'{token} withdrawal on the {network} network is not available')
+            logger.info(f'{token} withdrawal on the {network} network is not available')
             sys.exit(1)
 
-        for address in addresses:
+        for idx, address in enumerate(addresses):
             amount = random.uniform(args.min_amount, args.max_amount)
             decimals = random.randint(4, 7)  # May be improved
             amount = round(amount, decimals)
@@ -58,27 +75,34 @@ class LayerZeroApp:
             try:
                 exchange.withdraw(token, amount, network, address)
             except NotWhitelistedAddress as ex:
-                print(str(ex))
-                exit(1)
+                logger.info(str(ex))
+                sys.exit(1)
+
+            if idx == len(addresses) - 1:
+                logger.info('All withdrawals are successfully completed')
+                sys.exit(0)
 
             waiting_time = random.uniform(args.min_time, args.max_time)
+            logger.info(f'Waiting {round(waiting_time, 1)} minutes before the next withdrawal')
             time.sleep(waiting_time * 60)  # Convert waiting time to seconds
 
     def run_bridger(self, args: argparse.Namespace) -> None:
         config = ConfigurationHelper()
         config.check_configuration()
 
-        mode = BridgerMode(args.mode)
+        bridger_mode = BridgerMode(args.bridger_mode)
+        refuel_mode = RefuelMode(args.refuel_mode)
+
         accounts = []
 
         for account_id, private_key in enumerate(self.wh.load_private_keys(args.private_keys)):
-            accounts.append(AccountThread(account_id, private_key, mode))
+            accounts.append(AccountThread(account_id, private_key, bridger_mode, refuel_mode))
             accounts[account_id].start()
 
         for account in accounts:
             account.join()
 
-    def create_generate_parser(self, subparsers: Any) -> None:
+    def _create_generate_parser(self, subparsers: Any) -> None:
         generate_parser = subparsers.add_parser("generate", help="Generate new private keys")
 
         generate_parser.add_argument("num_keys", type=int, help="Number of private keys to generate")
@@ -86,7 +110,7 @@ class LayerZeroApp:
 
         generate_parser.set_defaults(func=self.generate_private_keys)
 
-    def create_withdraw_parser(self, subparsers: Any) -> None:
+    def _create_withdraw_parser(self, subparsers: Any) -> None:
         withdraw_parser = subparsers.add_parser("withdraw", help="Withdraw funds from exchange to account addresses")
 
         withdraw_parser.add_argument("token", help="Token to be withdrawn")
@@ -112,27 +136,16 @@ class LayerZeroApp:
 
         withdraw_parser.set_defaults(func=self.withdraw_funds)
 
-    def create_run_bridger_parser(self, subparsers: Any) -> None:
+    def _create_run_bridger_parser(self, subparsers: Any) -> None:
         run_parser = subparsers.add_parser("run", help="Run the LayerZero bridger")
-        run_parser.add_argument("mode", choices=["stargate", "btcb", "testnet"],
+        run_parser.add_argument("bridger_mode", choices=["stargate", "btcb", "testnet"],
                                 help="Running mode (stargate, btcb, testnet)")
         run_parser.add_argument("--private-keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH, dest="private_keys",
                                 help="Path to the file containing private keys")
+        run_parser.add_argument("--refuel", choices=["manual", "binance", "okex"], default="manual", dest='refuel_mode',
+                                help="Refuel mode (manual, binance, okex)")
+
         run_parser.set_defaults(func=self.run_bridger)
-
-    def main(self) -> None:
-        parser = argparse.ArgumentParser(description="LayerZeroApp CLI")
-        subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
-
-        self.create_generate_parser(subparsers)
-        self.create_withdraw_parser(subparsers)
-        self.create_run_bridger_parser(subparsers)
-
-        args = parser.parse_args()
-        if hasattr(args, "func"):
-            args.func(args)
-        else:
-            parser.print_help()
 
 
 if __name__ == "__main__":

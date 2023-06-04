@@ -14,9 +14,6 @@ SUPPORTED_NETWORKS_STARGATE = [
     Optimism()
 ]
 
-STARGATE_SLIPPAGE = 0.01  # 0.01 - 1%
-MIN_STABLECOIN_BALANCE = 1  # Minimal balance to bridge
-
 DEFAULT_PRIVATE_KEYS_FILE_PATH = os.getenv("DEFAULT_PRIVATE_KEYS_FILE_PATH")
 
 
@@ -27,12 +24,9 @@ class BridgerMode(Enum):
 
 
 class RefuelMode(Enum):
-    MANUAL = 1  # Manual refuel
-    OKEX = 2  # Automatic refuel from the Okex exchange
-    BINANCE = 3  # Automatic refuel from the Binance exchange
-
-
-REFUEL_MODE = RefuelMode.BINANCE  # One of RefuelMode constants
+    MANUAL = "manual"  # Manual refuel
+    OKEX = "okex"  # Automatic refuel from the Okex exchange
+    BINANCE = "binance"  # Automatic refuel from the Binance exchange
 
 
 # Utility class
@@ -43,7 +37,7 @@ class TimeRanges:
 
 # Randomization ranges (seconds). The ranges shown are just examples of values that can easily be changed
 class SleepTimings:
-    AFTER_START_RANGE = (0, TimeRanges.MINUTE)  # from 0 seconds to 10 minutes. Sleep after start
+    AFTER_START_RANGE = (0, TimeRanges.MINUTE * 10)  # from 0 seconds to 10 minutes. Sleep after start
     BEFORE_BRIDGE_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 1 hour. Sleep before bridge
     BALANCE_RECHECK_TIME = TimeRanges.MINUTE * 2  # 2 minutes. Recheck time for stablecoin or native token deposit
     BEFORE_WITHDRAW_RANGE = (30, TimeRanges.HOUR)  # from 30 seconds to 30 minutes. Sleep before withdraw from exchange
@@ -60,21 +54,16 @@ class ConfigurationHelper:
 
     @staticmethod
     def check_stargate_slippage() -> None:
-        if STARGATE_SLIPPAGE < 0.001:
+        if float(os.getenv('STARGATE_SLIPPAGE')) < 0.001:
             raise ConfigurationError("Slippage can't be lower than 0.01%. Check configuration settings")
-        if STARGATE_SLIPPAGE > 0.2:
+        if float(os.getenv('STARGATE_SLIPPAGE')) > 0.2:
             raise ConfigurationError("Slippage is too high. It's more than 20%. Check configuration settings")
 
     @staticmethod
     def check_min_stablecoin_balance() -> None:
-        if MIN_STABLECOIN_BALANCE < 0:
+        if float(os.getenv('STARGATE_MIN_STABLECOIN_BALANCE')) < 0:
             raise ConfigurationError("Incorrect minimum stablecoin balance. It can't be lower than zero. "
                                      "Check configuration settings")
-
-    @staticmethod
-    def check_refuel_mode() -> None:
-        if not isinstance(REFUEL_MODE, RefuelMode):
-            raise ConfigurationError('Incorrect REFUEL_MODE value. Check possible values in the RefuelMode class')
 
     @staticmethod
     def create_logging_directory() -> None:
@@ -88,6 +77,5 @@ class ConfigurationHelper:
         ConfigurationHelper.check_networks_list()
         ConfigurationHelper.check_stargate_slippage()
         ConfigurationHelper.check_min_stablecoin_balance()
-        ConfigurationHelper.check_refuel_mode()
 
         ConfigurationHelper.create_logging_directory()
