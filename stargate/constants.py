@@ -31,7 +31,7 @@ class StargateConstants:
     @staticmethod
     def get_randomized_swap_gas_limit(network_name: str) -> int:
         if network_name not in StargateConstants.SWAP_GAS_LIMIT:
-            raise NotSupported(f"{network_name} isn't supported by get_swap_gas_limit()")
+            raise NotSupported(f"{network_name} isn't supported by get_randomized_swap_gas_limit()")
 
         return random.randint(StargateConstants.SWAP_GAS_LIMIT[network_name][0],
                               StargateConstants.SWAP_GAS_LIMIT[network_name][1])
