@@ -24,7 +24,7 @@ class StargateUtils:
             abi=STARGATE_ROUTER_ABI)
 
         quote_data = contract.functions.quoteLayerZeroFee(
-            dst_network.stargate_chain_id,  # destination chainId
+            dst_network.layerzero_chain_id,  # destination chainId
             1,  # function type (1 - swap): see Bridge.sol for all types
             dst_address,  # destination of tokens
             "0x",  # payload, using abi.encode()
@@ -111,7 +111,7 @@ class StargateBridgeHelper:
 
         logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas settings: {gas_params}')
         tx = contract.functions.swap(
-            self.dst_network.stargate_chain_id,  # destination chainId
+            self.dst_network.layerzero_chain_id,  # destination chainId
             self.src_stablecoin.stargate_pool_id,  # source poolId
             self.dst_stablecoin.stargate_pool_id,  # destination poolId
             self.account.address,  # refund address. extra gas (if any) is returned to this address
