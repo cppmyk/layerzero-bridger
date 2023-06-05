@@ -1,4 +1,6 @@
 import logging
+import random
+import time
 
 from eth_account.signers.local import LocalAccount
 from web3.types import TxParams
@@ -127,6 +129,8 @@ class BTCbBridgeHelper:
 
             if not result:
                 return False
+
+            time.sleep(random.randint(10, 60))
 
         tx_hash = self._send_bridge_transaction()
         result = self.src_network.wait_for_transaction(tx_hash)

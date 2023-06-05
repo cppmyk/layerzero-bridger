@@ -1,5 +1,6 @@
 import logging
 import random
+import time
 
 from hexbytes import HexBytes
 from web3 import Web3
@@ -139,6 +140,9 @@ class StargateBridgeHelper:
 
         if not self._approve_stablecoin_usage(self.amount):
             return False
+
+        # Wait for a blockchain sync to fix 'nonce too low'
+        time.sleep(random.randint(10, 60))
 
         tx_hash = self._send_swap_transaction()
         result = self.src_network.wait_for_transaction(tx_hash)
