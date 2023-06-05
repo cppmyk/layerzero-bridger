@@ -1,7 +1,11 @@
+import logging
+
 from network.fantom.constants import FantomConstants
 from network.network import EVMNetwork
 from stargate import StargateConstants
 from utility import Stablecoin
+
+logger = logging.getLogger(__name__)
 
 
 class Fantom(EVMNetwork):
@@ -23,5 +27,7 @@ class Fantom(EVMNetwork):
         gas_params = {
             'gasPrice': self.get_current_gas()
         }
+
+        logger.debug(f"{self.name} gas params fetched. Params: {gas_params}")
 
         return gas_params

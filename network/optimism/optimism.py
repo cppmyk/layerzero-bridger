@@ -1,3 +1,5 @@
+import logging
+
 from web3.types import TxParams
 
 from network.network import EVMNetwork
@@ -5,6 +7,8 @@ from network.optimism.constants import OptimismConstants
 from stargate import StargateConstants
 from utility import Stablecoin
 from abi import OPTIMISM_GAS_ORACLE_ABI
+
+logger = logging.getLogger(__name__)
 
 
 class Optimism(EVMNetwork):
@@ -26,6 +30,8 @@ class Optimism(EVMNetwork):
         gas_params = {
             'gasPrice': self.get_current_gas()
         }
+
+        logger.debug(f"{self.name} gas params fetched. Params: {gas_params}")
 
         return gas_params
 

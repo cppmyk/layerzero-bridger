@@ -74,6 +74,11 @@ class EVMNetwork(Network):
 
         return self.w3.eth.gas_price
 
+    def get_max_fee_per_gas(self) -> int:
+        """ Method that returns maxFeePerGas param for EIP-1559 networks and gasPrice for others """
+
+        return self.get_current_gas()
+
     def get_transaction_gas_params(self) -> dict:
         """ Method that returns formatted gas params to be added to build_transaction """
 

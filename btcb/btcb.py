@@ -54,7 +54,7 @@ class BTCbUtils:
         # Avalanche network needs BTC.b approval before bridging
         if isinstance(src_network, Avalanche):
             max_overall_gas_limit += src_network.get_approve_gas_limit()
-        gas_price = max_overall_gas_limit * src_network.get_current_gas()
+        gas_price = max_overall_gas_limit * src_network.get_max_fee_per_gas()
 
         # Optimism fee should be calculated in a different way.
         # Read more: https://community.optimism.io/docs/developers/build/transaction-fees/#

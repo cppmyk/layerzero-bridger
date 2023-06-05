@@ -1,7 +1,11 @@
+import logging
+
 from network.arbitrum.constants import ArbitrumConstants
 from network.network import EVMNetwork
 from stargate import StargateConstants
 from utility import Stablecoin
+
+logger = logging.getLogger(__name__)
 
 
 class Arbitrum(EVMNetwork):
@@ -21,10 +25,16 @@ class Arbitrum(EVMNetwork):
     def get_approve_gas_limit(self) -> int:
         return ArbitrumConstants.APPROVE_GAS_LIMIT
 
+    def get_max_fee_per_gas(self) -> int:
+        # Fixed value
+        return 135000000
+
     def get_transaction_gas_params(self) -> dict:
         gas_params = {
-            'maxFeePerGas': self.get_current_gas() + 35000000,
+            'maxFeePerGas': self.get_max_fee_per_gas(),
             'maxPriorityFeePerGas': 0
         }
+
+        logger.debug(f"{self.name} gas params fetched. Params: {gas_params}")
 
         return gas_params

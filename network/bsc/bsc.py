@@ -1,7 +1,11 @@
+import logging
+
 from network.bsc.constants import BSCConstants
 from network.network import EVMNetwork
 from stargate import StargateConstants
 from utility import Stablecoin
+
+logger = logging.getLogger(__name__)
 
 
 class BSC(EVMNetwork):
@@ -25,5 +29,7 @@ class BSC(EVMNetwork):
         gas_params = {
             'gasPrice': self.get_current_gas()
         }
+
+        logger.debug(f"{self.name} gas params fetched. Params: {gas_params}")
 
         return gas_params

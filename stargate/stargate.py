@@ -61,7 +61,7 @@ class StargateUtils:
         approve_gas_limit = src_network.get_approve_gas_limit()
         max_overall_gas_limit = StargateConstants.get_max_randomized_swap_gas_limit(
             src_network.name) + approve_gas_limit
-        gas_price = max_overall_gas_limit * src_network.get_current_gas()
+        gas_price = max_overall_gas_limit * src_network.get_max_fee_per_gas()
 
         # Optimism fee should be calculated in a different way.
         # Read more: https://community.optimism.io/docs/developers/build/transaction-fees/#
@@ -111,7 +111,7 @@ class StargateUtils:
             {
                 'from': address,
                 'value': layerzero_fee,
-                'gas': StargateConstants.get_randomized_swap_gas_limit(src_network.name),
+                # 'gas': StargateConstants.get_randomized_swap_gas_limit(src_network.name),
                 **gas_params,
                 'nonce': nonce
             }
@@ -142,7 +142,7 @@ class StargateBridgeHelper:
             return False
 
         # Wait for a blockchain sync to fix 'nonce too low'
-        time.sleep(random.randint(10, 60))
+        # time.sleep(random.randint(10, 60))
 
         tx_hash = self._send_swap_transaction()
         result = self.src_network.wait_for_transaction(tx_hash)
@@ -180,6 +180,8 @@ class StargateBridgeHelper:
                                                          self.src_network.stargate_router_address)
         if allowance >= amount:
             return True
+
+        logger.debug(f'Approving {self.src_stablecoin.symbol} usage to perform Stargate bridge')
 
         tx_hash = self.src_network.approve_token_usage(self.account.key, self.src_stablecoin.contract_address,
                                                        self.src_network.stargate_router_address, amount)
