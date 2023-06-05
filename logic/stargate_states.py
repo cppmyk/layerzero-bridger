@@ -140,8 +140,8 @@ class ChooseDestinationStablecoinState(State):
         dst_stablecoin = random.choice(list(self.dst_network.supported_stablecoins.values()))
 
         logger.info(f"Destination stablecoin is chosen - {dst_stablecoin.symbol}")
-        logger.info(f"Path: {self.src_stablecoin.symbol}({self.src_network.name}) -> "
-                    f"{dst_stablecoin.symbol}({self.dst_network.name})")
+        logger.info(f"Path: {self.src_stablecoin.symbol} ({self.src_network.name}) -> "
+                    f"{dst_stablecoin.symbol} ({self.dst_network.name})")
 
         thread.set_state(CheckNativeTokenBalanceForGasState(self.src_network, self.dst_network,
                                                             self.src_stablecoin, dst_stablecoin))
