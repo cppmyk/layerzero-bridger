@@ -68,8 +68,10 @@ class LayerZeroApp:
             sys.exit(1)
 
         for idx, address in enumerate(addresses):
+            logger.info(f'Processing {idx}/{len(addresses)}')
+
             amount = random.uniform(args.min_amount, args.max_amount)
-            decimals = random.randint(4, 7)  # May be improved
+            decimals = random.randint(3, 6)  # May be improved
             amount = round(amount, decimals)
 
             try:
@@ -93,9 +95,15 @@ class LayerZeroApp:
         bridger_mode = BridgerMode(args.bridger_mode)
         refuel_mode = RefuelMode(args.refuel_mode)
 
+        private_keys = self.wh.load_private_keys(args.private_keys)
+
+        if not private_keys:
+            logger.info("Zero private keys was loaded")
+            sys.exit(1)
+
         accounts = []
 
-        for account_id, private_key in enumerate(self.wh.load_private_keys(args.private_keys)):
+        for account_id, private_key in enumerate(private_keys):
             accounts.append(AccountThread(account_id, private_key, bridger_mode, refuel_mode))
             accounts[account_id].start()
 
@@ -117,18 +125,16 @@ class LayerZeroApp:
         withdraw_parser.add_argument("network", help="Network for the withdrawal")
 
         # Amount
-        withdraw_parser.add_argument("--min-amount", type=float, dest="min_amount",
-                                     help="Minimum amount of withdrawal", required=True)
-        withdraw_parser.add_argument("--max-amount", type=float, dest="max_amount",
-                                     help="Maximum amount of withdrawal", required=True)
+        withdraw_parser.add_argument("min_amount", type=float, help="Minimum amount of withdrawal")
+        withdraw_parser.add_argument("max_amount", type=float, help="Maximum amount of withdrawal")
 
         # Waiting time
-        withdraw_parser.add_argument("--min-waiting-time", type=float, default=0, dest="min_time",
+        withdraw_parser.add_argument("--min_time", type=float, default=0, dest="min_time",
                                      help="Minimum waiting time between withdraws in minutes")
-        withdraw_parser.add_argument("--max-waiting-time", type=float, default=0, dest="max_time",
+        withdraw_parser.add_argument("--max_time", type=float, default=0, dest="max_time",
                                      help="Maximum waiting time between withdraws in minutes")
 
-        withdraw_parser.add_argument("--private-keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH,
+        withdraw_parser.add_argument("--keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH,
                                      dest="private_keys",
                                      help="Path to the file containing private keys of the account addresses")
         withdraw_parser.add_argument("--exchange", choices=["binance", "okex"], default="binance", dest='exchange',
@@ -140,7 +146,7 @@ class LayerZeroApp:
         run_parser = subparsers.add_parser("run", help="Run the LayerZero bridger")
         run_parser.add_argument("bridger_mode", choices=["stargate", "btcb", "testnet"],
                                 help="Running mode (stargate, btcb, testnet)")
-        run_parser.add_argument("--private-keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH, dest="private_keys",
+        run_parser.add_argument("--keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH, dest="private_keys",
                                 help="Path to the file containing private keys")
         run_parser.add_argument("--refuel", choices=["manual", "binance", "okex"], default="manual", dest='refuel_mode',
                                 help="Refuel mode (manual, binance, okex)")
