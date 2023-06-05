@@ -111,7 +111,7 @@ class StargateUtils:
             {
                 'from': address,
                 'value': layerzero_fee,
-                # 'gas': StargateConstants.get_randomized_swap_gas_limit(src_network.name),
+                'gas': StargateConstants.get_randomized_swap_gas_limit(src_network.name),
                 **gas_params,
                 'nonce': nonce
             }
@@ -142,7 +142,7 @@ class StargateBridgeHelper:
             return False
 
         # Wait for a blockchain sync to fix 'nonce too low'
-        # time.sleep(random.randint(10, 60))
+        time.sleep(random.randint(10, 60))
 
         tx_hash = self._send_swap_transaction()
         result = self.src_network.wait_for_transaction(tx_hash)
