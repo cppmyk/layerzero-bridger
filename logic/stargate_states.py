@@ -235,7 +235,8 @@ class RefuelWithExchangeState(State):
 
         layer_zero_fee = StargateUtils.estimate_layerzero_swap_fee(self.src_network, self.dst_network,
                                                                    thread.account.address) / 10 ** 18
-        swap_price = StargateUtils.estimate_swap_gas_price(self.src_network) / 10 ** 18
+        swap_price = StargateUtils.estimate_swap_gas_price(self.src_network, self.dst_network,
+                                                           thread.account.address) / 10 ** 18
         mul = 2  # Multiplier to withdraw funds with a reserve
 
         logger.info(f'L0 fee: {layer_zero_fee} {self.src_network.native_token}. '

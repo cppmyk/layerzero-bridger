@@ -9,6 +9,7 @@ from eth_typing import Hash32, HexStr
 from hexbytes import HexBytes
 from web3 import HTTPProvider, Web3
 from web3.exceptions import TransactionNotFound
+from web3.types import TxParams
 
 from abi import ERC20_ABI
 from base.errors import NotSupported
@@ -144,10 +145,7 @@ class EVMNetwork(Network):
     def get_approve_gas_limit(self) -> int:
         raise NotSupported(f"{self.name} _get_approve_gas_limit() is not implemented")
 
-    def approve_token_usage(self, private_key: str, contract_address: str, spender: str, amount: int) -> HexBytes:
-        """ Method that approves token usage by spender address and returns transaction hash """
-
-        account = self.w3.eth.account.from_key(private_key)
+    def _build_approve_transaction(self, address: str, contract_address: str, spender: str, amount: int) -> TxParams:
         contract = self.w3.eth.contract(address=Web3.to_checksum_address(contract_address), abi=ERC20_ABI)
 
         randomized_gas_limit = random.randint(int(self.get_approve_gas_limit() * 0.95), self.get_approve_gas_limit())
@@ -155,12 +153,20 @@ class EVMNetwork(Network):
 
         tx = contract.functions.approve(spender, amount).build_transaction(
             {
-                'from': account.address,
+                'from': address,
                 'gas': randomized_gas_limit,
                 **gas_params,
-                'nonce': self.get_nonce(account.address)
+                'nonce': self.get_nonce(address)
             }
         )
+
+        return tx
+
+    def approve_token_usage(self, private_key: str, contract_address: str, spender: str, amount: int) -> HexBytes:
+        """ Method that approves token usage by spender address and returns transaction hash """
+
+        account = self.w3.eth.account.from_key(private_key)
+        tx = self._build_approve_transaction(account.address, contract_address, spender, amount)
 
         signed_tx = self.w3.eth.account.sign_transaction(tx, private_key)
         tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)

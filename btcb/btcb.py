@@ -1,6 +1,7 @@
 import logging
 
 from eth_account.signers.local import LocalAccount
+from web3.types import TxParams
 
 from abi import BTCB_ABI
 from network import EVMNetwork, Optimism, Avalanche
@@ -35,22 +36,35 @@ class BTCbUtils:
         return quote_data[0]
 
     @staticmethod
-    def estimate_swap_gas_price(network: EVMNetwork) -> int:
-        max_overall_gas_limit = BTCbConstants.get_max_randomized_bridge_gas_limit(network.name)
+    def _get_optimism_bridge_l1_fee(optimism: Optimism, dst_network: EVMNetwork, address: str) -> int:
+        # Doesn't matter in fee calculation
+        amount = 100
 
-        if isinstance(network, Avalanche):
-            max_overall_gas_limit += network.get_approve_gas_limit()
+        bridge_tx = BTCbUtils.build_bridge_transaction(optimism, dst_network, amount, address)
+        bridge_l1_fee = optimism.get_l1_fee(bridge_tx)
+
+        return bridge_l1_fee
+
+    @staticmethod
+    def estimate_bridge_gas_price(src_network: EVMNetwork, dst_network: EVMNetwork, address: str) -> int:
+        max_overall_gas_limit = BTCbConstants.get_max_randomized_bridge_gas_limit(src_network.name)
+
+        # Avalanche network needs BTC.b approval before bridging
+        if isinstance(src_network, Avalanche):
+            max_overall_gas_limit += src_network.get_approve_gas_limit()
+        gas_price = max_overall_gas_limit * src_network.get_current_gas()
 
         # Optimism fee should be calculated in a different way.
         # Read more: https://community.optimism.io/docs/developers/build/transaction-fees/#
-        gas_price = max_overall_gas_limit * network.get_current_gas()
+        if isinstance(src_network, Optimism):
+            gas_price += BTCbUtils._get_optimism_bridge_l1_fee(src_network, dst_network, address)
 
         return gas_price
 
     @staticmethod
     def is_enough_native_balance_for_bridge_fee(src_network: EVMNetwork, dst_network: EVMNetwork, address: str):
         account_balance = src_network.get_balance(address)
-        gas_price = BTCbUtils.estimate_swap_gas_price(src_network)
+        gas_price = BTCbUtils.estimate_bridge_gas_price(src_network, dst_network, address)
         layerzero_fee = BTCbUtils.estimate_layerzero_bridge_fee(src_network, dst_network, address)
 
         enough_native_token_balance = account_balance > (gas_price + layerzero_fee)
@@ -64,6 +78,38 @@ class BTCbUtils:
 
         return network.get_token_balance(BTCbConstants.BTCB_CONTRACT_ADDRESS, address)
 
+    @staticmethod
+    def build_bridge_transaction(src_network: EVMNetwork, dst_network: EVMNetwork,
+                                 amount: int, address: str) -> TxParams:
+        btcb_contract = src_network.w3.eth.contract(address=BTCbConstants.BTCB_CONTRACT_ADDRESS, abi=BTCB_ABI)
+
+        layerzero_fee = BTCbUtils.estimate_layerzero_bridge_fee(src_network, dst_network, address)
+
+        nonce = src_network.get_nonce(address)
+        gas_params = src_network.get_transaction_gas_params()
+        logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas settings: {gas_params}')
+
+        tx = btcb_contract.functions.sendFrom(
+            address,  # _from
+            dst_network.layerzero_chain_id,  # _dstChainId
+            f"0x000000000000000000000000{address[2:]}",  # _toAddress
+            amount,  # _amount
+            amount,  # _minAmount
+            [address,  # _callParams.refundAddress
+             "0x0000000000000000000000000000000000000000",  # _callParams.zroPaymentAddress
+             BTCbUtils.get_adapter_params(src_network, address)]  # _callParams.adapterParams
+        ).build_transaction(
+            {
+                'from': address,
+                'value': layerzero_fee,
+                'gas': BTCbConstants.get_randomized_bridge_gas_limit(src_network.name),
+                **gas_params,
+                'nonce': nonce
+            }
+        )
+
+        return tx
+
 
 class BTCbBridgeHelper:
     def __init__(self, account: LocalAccount, src_network: EVMNetwork, dst_network: EVMNetwork, amount: int) -> None:
@@ -71,8 +117,6 @@ class BTCbBridgeHelper:
         self.src_network = src_network
         self.dst_network = dst_network
         self.amount = amount
-
-        self.btcb_contract = self.src_network.w3.eth.contract(address=BTCbConstants.BTCB_CONTRACT_ADDRESS, abi=BTCB_ABI)
 
     def make_bridge(self) -> bool:
         if not self._is_bridge_possible():
@@ -121,31 +165,7 @@ class BTCbBridgeHelper:
         return self.src_network.check_tx_result(result, f"Approve BTC.b usage")
 
     def _send_bridge_transaction(self):
-        layerzero_fee = BTCbUtils.estimate_layerzero_bridge_fee(self.src_network, self.dst_network,
-                                                                self.account.address)
-
-        nonce = self.src_network.get_nonce(self.account.address)
-        gas_params = self.src_network.get_transaction_gas_params()
-        logger.info(f'Estimated fees. LayerZero fee: {layerzero_fee}. Gas settings: {gas_params}')
-
-        tx = self.btcb_contract.functions.sendFrom(
-            self.account.address,  # _from
-            self.dst_network.layerzero_chain_id,  # _dstChainId
-            f"0x000000000000000000000000{self.account.address[2:]}",  # _toAddress
-            self.amount,  # _amount
-            self.amount,  # _minAmount
-            [self.account.address,  # _callParams.refundAddress
-             "0x0000000000000000000000000000000000000000",  # _callParams.zroPaymentAddress
-             BTCbUtils.get_adapter_params(self.src_network, self.account.address)]  # _callParams.adapterParams
-        ).build_transaction(
-            {
-                'from': self.account.address,
-                'value': layerzero_fee,
-                'gas': BTCbConstants.get_randomized_bridge_gas_limit(self.src_network.name),
-                **gas_params,
-                'nonce': nonce
-            }
-        )
+        tx = BTCbUtils.build_bridge_transaction(self.src_network, self.dst_network, self.amount, self.account.address)
 
         signed_tx = self.src_network.w3.eth.account.sign_transaction(tx, self.account.key)
         tx_hash = self.src_network.w3.eth.send_raw_transaction(signed_tx.rawTransaction)

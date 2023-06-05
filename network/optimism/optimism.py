@@ -1,7 +1,10 @@
+from web3.types import TxParams
+
 from network.network import EVMNetwork
 from network.optimism.constants import OptimismConstants
 from stargate import StargateConstants
 from utility import Stablecoin
+from abi import OPTIMISM_GAS_ORACLE_ABI
 
 
 class Optimism(EVMNetwork):
@@ -25,3 +28,20 @@ class Optimism(EVMNetwork):
         }
 
         return gas_params
+
+    def get_l1_fee(self, tx_params: TxParams) -> int:
+        oracle = self.w3.eth.contract(address=OptimismConstants.GAS_ORACLE_CONTRACT_ADDRESS,
+                                      abi=OPTIMISM_GAS_ORACLE_ABI)
+
+        gas = oracle.functions.getL1Fee(tx_params['data']).call()
+
+        return gas
+
+    def get_approve_l1_fee(self):
+        # Almost doesn't matter in fee calculation
+        addr = "0x0000000000000000000000000000000000000000"
+        amount = 10
+
+        approve_tx = self._build_approve_transaction(addr, addr, addr, amount)
+
+        return self.get_l1_fee(approve_tx)
