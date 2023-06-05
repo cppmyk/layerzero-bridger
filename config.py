@@ -14,6 +14,15 @@ SUPPORTED_NETWORKS_STARGATE = [
     Optimism()
 ]
 
+SUPPORTED_NETWORKS_BTCB = [
+    # Ethereum(),  # High gas price
+    Polygon(),
+    Avalanche(),
+    Arbitrum(),
+    BSC(),
+    Optimism()
+]
+
 DEFAULT_PRIVATE_KEYS_FILE_PATH = os.getenv("DEFAULT_PRIVATE_KEYS_FILE_PATH")
 
 
