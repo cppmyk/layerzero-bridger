@@ -139,9 +139,12 @@ class Binance(Exchange):
         withdraw_info = self.get_withdraw_info(symbol, network)
 
         if withdraw_info.min_amount > amount:
-            amount = withdraw_info.min_amount
-        amount += withdraw_info.fee * 3
+            mul = random.uniform(1, 2)
+            amount = withdraw_info.min_amount * mul
+            decimal = random.randint(4, 7)
+            amount = round(amount, decimal)
 
+        amount += withdraw_info.fee * 3
         amount_to_withdraw = amount
 
         balance = self.get_funding_balance(symbol)

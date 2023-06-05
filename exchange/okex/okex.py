@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import List
 
 import ccxt
@@ -107,7 +108,11 @@ class Okex(Exchange):
         withdraw_info = self.get_withdraw_info(symbol, network)
 
         if withdraw_info.min_amount > amount:
-            amount = withdraw_info.min_amount
+            mul = random.uniform(1, 2)
+            amount = withdraw_info.min_amount * mul
+            decimal = random.randint(4, 7)
+            amount = round(amount, decimal)
+
         amount += withdraw_info.fee * 3
 
         balance = self.get_funding_balance(symbol)
