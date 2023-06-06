@@ -123,7 +123,9 @@ class LayerZeroApp:
         withdraw_parser = subparsers.add_parser("withdraw", help="Withdraw funds from exchange to account addresses")
 
         withdraw_parser.add_argument("token", help="Token to be withdrawn")
-        withdraw_parser.add_argument("network", help="Network for the withdrawal")
+        withdraw_parser.add_argument("network", choices=["Arbitrum", "Ethereum", "Optimism", "Polygon",
+                                                         "Fantom", "Avalanche", "BSC"],
+                                     help="Network for the withdrawal")
 
         # Amount
         withdraw_parser.add_argument("min_amount", type=float, help="Minimum amount of withdrawal")
