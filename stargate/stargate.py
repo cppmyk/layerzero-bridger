@@ -103,7 +103,7 @@ class StargateUtils:
             amount_with_slippage,  # the min qty you would accept on the destination
             [0,  # extra gas, if calling smart contract
              0,  # amount of dust dropped in destination wallet
-             "0x"  # destination wallet for dust
+             "0x0000000000000000000000000000000000000001"  # destination wallet for dust
              ],
             address,  # the address to send the tokens to on the destination
             "0x",  # "fee" is the native gas to pay for the cross chain message fee
