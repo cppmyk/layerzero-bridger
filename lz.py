@@ -16,14 +16,14 @@ from utility import WalletHelper
 logger = logging.getLogger(__name__)
 
 
-class LayerZeroApp:
+class LayerZeroBridger:
 
     def __init__(self) -> None:
         setup_logger()
         self.wh = WalletHelper()
 
     def main(self) -> None:
-        parser = argparse.ArgumentParser(description="LayerZeroApp CLI")
+        parser = argparse.ArgumentParser(description="layerzero-bridger CLI")
         subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
 
         self._create_generate_parser(subparsers)
@@ -159,5 +159,5 @@ class LayerZeroApp:
 
 
 if __name__ == "__main__":
-    app = LayerZeroApp()
+    app = LayerZeroBridger()
     app.main()
