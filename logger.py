@@ -9,7 +9,7 @@ def setup_logger(level=logging.INFO) -> logging.Logger:
     logging.getLogger('urllib3').setLevel(logging.INFO)
     logging.getLogger('ccxt').setLevel(logging.INFO)
 
-    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(threadName)s] %(message)s')
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(threadName)-10s] %(message)s')
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
@@ -33,7 +33,7 @@ class ThreadLogFilter(logging.Filter):
         return record.threadName == self.thread_name
 
 
-def setup_thread_logger(path: str, log_level=logging.INFO) -> logging.FileHandler:
+def setup_thread_logger(path: str, log_level=logging.DEBUG) -> logging.FileHandler:
     """ Add a log handler to separate file for current thread """
 
     thread_name = threading.current_thread().name
