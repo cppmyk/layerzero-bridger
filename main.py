@@ -94,6 +94,7 @@ class LayerZeroApp:
 
         bridger_mode = BridgerMode(args.bridger_mode)
         refuel_mode = RefuelMode(args.refuel_mode)
+        bridges_limit = args.limit
 
         private_keys = self.wh.load_private_keys(args.private_keys)
 
@@ -104,7 +105,7 @@ class LayerZeroApp:
         accounts = []
 
         for account_id, private_key in enumerate(private_keys):
-            accounts.append(AccountThread(account_id, private_key, bridger_mode, refuel_mode))
+            accounts.append(AccountThread(account_id, private_key, bridger_mode, refuel_mode, bridges_limit))
             accounts[account_id].start()
 
         for account in accounts:
@@ -150,6 +151,7 @@ class LayerZeroApp:
                                 help="Path to the file containing private keys")
         run_parser.add_argument("--refuel", choices=["manual", "binance", "okex"], default="manual", dest='refuel_mode',
                                 help="Refuel mode (manual, binance, okex)")
+        run_parser.add_argument("--limit", type=int, help="Maximum number of bridges to be executed")
 
         run_parser.set_defaults(func=self.run_bridger)
 

@@ -252,8 +252,11 @@ class BTCBridgeState(State):
         bridge_result = bh.make_bridge()
 
         if bridge_result:
-            logger.info("BTC bridge finished successfully")
+            thread.remaining_bridges -= 1
+            logger.info(f"BTC bridge finished successfully. "
+                        f"Remaining bridges: {thread.remaining_bridges}/{thread.bridges_limit}")
         else:
-            logger.info("BTC bridge finished with error")
+            logger.info(f"BTC bridge finished with error. "
+                        f"Remaining bridges: {thread.remaining_bridges}/{thread.bridges_limit}")
 
         thread.set_state(CheckBTCbBalanceState())

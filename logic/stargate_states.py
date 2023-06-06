@@ -333,8 +333,11 @@ class StargateSwapState(State):
         bridge_result = bridge_helper.make_bridge()
 
         if bridge_result:
-            logger.info("Stargate bridge finished successfully")
+            thread.remaining_bridges -= 1
+            logger.info(f"Stargate bridge finished successfully. "
+                        f"Remaining bridges: {thread.remaining_bridges}/{thread.bridges_limit}")
         else:
-            logger.info("Stargate bridge finished with error")
+            logger.info(f"Stargate bridge finished with error. "
+                        f"Remaining bridges: {thread.remaining_bridges}/{thread.bridges_limit}")
 
         thread.set_state(CheckStablecoinBalanceState())

@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+from typing import Optional
 
 import requests
 from ccxt.base.errors import RateLimitExceeded, InsufficientFunds
@@ -17,15 +18,18 @@ logger = logging.getLogger(__name__)
 
 
 class AccountThread(threading.Thread):
-    def __init__(self, account_id: int, private_key: str, bridger_mode: BridgerMode, refuel_mode: RefuelMode):
+    def __init__(self, account_id: int, private_key: str, bridger_mode: BridgerMode, refuel_mode: RefuelMode,
+                 bridges_limit: Optional[int]) -> None:
         super().__init__(name=f"Account-{account_id}")
         self.account_id = account_id
         self.account = Account.from_key(private_key)
         self.bridger_mode = bridger_mode
         self.refuel_mode = refuel_mode
+        self.bridges_limit = bridges_limit
+        self.remaining_bridges = bridges_limit
         self.state = InitialState()
 
-    def run(self):
+    def run(self) -> None:
         setup_thread_logger("logs")
         logger.info(f"Account address: {self.account.address}")
 
@@ -38,14 +42,23 @@ class AccountThread(threading.Thread):
         else:
             raise ValueError("Unknown BridgeMode")
 
-    def set_state(self, state):
+    def set_state(self, state) -> None:
         self.state = state
 
-    def _run_stargate_mode(self):
+    def are_bridges_left(self) -> bool:
+        if self.remaining_bridges is None:
+            return True
+
+        bridges_left = self.remaining_bridges > 0
+        if not bridges_left:
+            logger.info('The bridge limit has been reached. The work is over')
+        return bridges_left
+
+    def _run_stargate_mode(self) -> None:
         logger.info("Running Stargate bridger")
 
         self.set_state(SleepBeforeStartStargateBridgerState())
-        while True:
+        while self.are_bridges_left():
             try:
                 self.state.handle(self)
             except BaseError as ex:
@@ -64,11 +77,11 @@ class AccountThread(threading.Thread):
                 self.set_state(CheckStablecoinBalanceState())
                 time.sleep(10 * TimeRanges.MINUTE)
 
-    def _run_btcb_mode(self):
+    def _run_btcb_mode(self) -> None:
         logger.info("Running BTC.b bridger")
 
         self.set_state(SleepBeforeStartBTCBridgerState())
-        while True:
+        while self.are_bridges_left():
             try:
                 self.state.handle(self)
             except BaseError as ex:
