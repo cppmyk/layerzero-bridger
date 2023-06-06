@@ -60,4 +60,5 @@ env.bak/
 venv.bak/
 
 private_keys.txt
-logs/*
+logs/
+generated_keys/
