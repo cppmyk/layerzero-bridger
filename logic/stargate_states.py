@@ -12,6 +12,7 @@ from config import SUPPORTED_NETWORKS_STARGATE, SleepTimings, \
     RefuelMode
 from logic.state import State
 from network import EVMNetwork
+from network.polygon.polygon import Polygon
 from utility import Stablecoin
 from network.balance_helper import BalanceHelper
 from exchange import ExchangeFactory
@@ -237,12 +238,16 @@ class RefuelWithExchangeState(State):
                                                                    thread.account.address) / 10 ** 18
         swap_price = StargateUtils.estimate_swap_gas_price(self.src_network, self.dst_network,
                                                            thread.account.address) / 10 ** 18
-        mul = 2  # Multiplier to withdraw funds with a reserve
+        mul = 1.1  # Multiplier to withdraw funds with a reserve
 
         logger.info(f'L0 fee: {layer_zero_fee} {self.src_network.native_token}. '
                     f'Swap price: {swap_price} {self.src_network.native_token}')
 
         amount_to_withdraw = mul * (layer_zero_fee + swap_price)
+
+        # Quick fix
+        if isinstance(self.src_network, Polygon):
+            amount_to_withdraw /= 3
 
         # Multiplier to randomize withdraw amount
         multiplier = random.uniform(1, 1.5)

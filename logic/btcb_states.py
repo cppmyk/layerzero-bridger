@@ -11,6 +11,7 @@ from base.errors import ConfigurationError, NotWhitelistedAddress
 from config import SUPPORTED_NETWORKS_BTCB, SleepTimings, RefuelMode
 from logic.state import State
 from network import EVMNetwork
+from network.polygon.polygon import Polygon
 from utility import Stablecoin
 from exchange import ExchangeFactory
 from btcb import BTCbBridgeHelper, BTCbUtils, BTCbConstants
@@ -183,12 +184,16 @@ class RefuelWithExchangeState(State):
                                                                  thread.account.address) / 10 ** 18
         bridge_price = BTCbUtils.estimate_bridge_gas_price(self.src_network, self.dst_network,
                                                            thread.account.address) / 10 ** 18
-        mul = 1.5  # Multiplier to withdraw funds with a reserve
+        mul = 1.1  # Multiplier to withdraw funds with a reserve
 
         logger.info(f'L0 fee: {layer_zero_fee} {self.src_network.native_token}. '
                     f'BTC bridge price: {bridge_price} {self.src_network.native_token}')
 
         amount_to_withdraw = mul * (layer_zero_fee + bridge_price)
+
+        # Quick fix
+        if isinstance(self.src_network, Polygon):
+            amount_to_withdraw /= 3
 
         # Multiplier to randomize withdraw amount
         multiplier = random.uniform(1, 1.5)
