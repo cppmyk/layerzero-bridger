@@ -145,8 +145,8 @@ class LayerZeroApp:
 
     def _create_run_bridger_parser(self, subparsers: Any) -> None:
         run_parser = subparsers.add_parser("run", help="Run the LayerZero bridger")
-        run_parser.add_argument("bridger_mode", choices=["stargate", "btcb", "testnet"],
-                                help="Running mode (stargate, btcb, testnet)")
+        run_parser.add_argument("bridger_mode", choices=["stargate", "btcb"],
+                                help="Running mode (stargate, btcb)")
         run_parser.add_argument("--keys", type=str, default=DEFAULT_PRIVATE_KEYS_FILE_PATH, dest="private_keys",
                                 help="Path to the file containing private keys")
         run_parser.add_argument("--refuel", choices=["manual", "binance", "okex"], default="manual", dest='refuel_mode',
