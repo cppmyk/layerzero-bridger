@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 class AccountThread(threading.Thread):
     def __init__(self, account_id: int, private_key: str, bridger_mode: BridgerMode, refuel_mode: RefuelMode,
                  bridges_limit: Optional[int]) -> None:
-        super().__init__(name=f"Account-{account_id}")
-        self.account_id = account_id
         self.account = Account.from_key(private_key)
+        super().__init__(name=f"Account-{account_id}-{self.account.address}")
+        self.account_id = account_id
         self.bridger_mode = bridger_mode
         self.refuel_mode = refuel_mode
         self.bridges_limit = bridges_limit

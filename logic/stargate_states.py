@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from dotenv import load_dotenv
 from typing import List
+from distutils.util import strtobool
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
 from config import SUPPORTED_NETWORKS_STARGATE, SleepTimings, \
@@ -79,9 +80,12 @@ class CheckStablecoinBalanceState(State):
         result = []
 
         for network in SUPPORTED_NETWORKS_STARGATE:
+            balance_helper = BalanceHelper(network, thread.account.address)
+            native_token_balance = balance_helper.get_native_token_balance()
+            logger.info(f'{network.name}. Native: {network.native_token} '
+                        f' - { native_token_balance / 10 ** 18 } ') # all evm chain native token decimal is 18
             for stablecoin in network.supported_stablecoins.values():
-                if self.is_enough_balance(BalanceHelper(network, thread.account.address),
-                                          stablecoin):
+                if self.is_enough_balance(balance_helper, stablecoin):
                     result.append(NetworkWithStablecoinBalance(network, stablecoin))
 
         return result
@@ -327,6 +331,12 @@ class StargateSwapState(State):
     def handle(self, thread) -> None:
         balance_helper = BalanceHelper(self.src_network, thread.account.address)
         amount = balance_helper.get_stablecoin_balance(self.src_stablecoin)
+
+        enable_random_amount = strtobool(os.getenv('RANDOM_AMOUNT'))
+        if enable_random_amount:
+            low_bound = float(os.getenv('LOW_RANDOM_RANGE'))
+            high_bound = float(os.getenv('HIGH_RANDOM_RANGE'))
+            amount = amount * random.uniform(low_bound, high_bound)
 
         logger.info(f"Swapping {amount / 10 ** self.src_stablecoin.decimals} tokens through Stargate bridge. "
                     f"{self.src_stablecoin.symbol}({self.src_network.name}) -> "
