@@ -10,7 +10,7 @@ from distutils.util import strtobool
 
 from base.errors import ConfigurationError, StablecoinNotSupportedByChain, NotWhitelistedAddress
 from config import SUPPORTED_NETWORKS_STARGATE, SleepTimings, \
-    RefuelMode
+    RefuelMode, EXPENSIVE_NETWORKS_STARGATE
 from logic.state import State
 from network import EVMNetwork
 from network.polygon.polygon import Polygon
@@ -119,6 +119,12 @@ class ChooseDestinationNetworkState(State):
 
         networks = SUPPORTED_NETWORKS_STARGATE.copy()
         networks.remove(self.src_network)
+
+        for pass_net in thread.expensive_network_pass:
+            networks.remove(pass_net)
+
+        if self.src_network in EXPENSIVE_NETWORKS_STARGATE:
+            thread.expensive_network_pass.add(self.src_network)
 
         if len(networks) == 0:
             raise ConfigurationError("Unable to select destination chain. "

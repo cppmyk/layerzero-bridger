@@ -14,6 +14,12 @@ SUPPORTED_NETWORKS_STARGATE = [
     Optimism()
 ]
 
+EXPENSIVE_NETWORKS_STARGATE = [
+    Arbitrum(), # дорого, надо выключить
+    Optimism() # дорого, выключть надо
+]
+
+
 SUPPORTED_NETWORKS_BTCB = [
     # Ethereum(),  # High gas price
     Polygon(),

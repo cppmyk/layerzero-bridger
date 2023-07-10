@@ -28,6 +28,7 @@ class AccountThread(threading.Thread):
         self.bridges_limit = bridges_limit
         self.remaining_bridges = bridges_limit
         self.state = InitialState()
+        self.expensive_network_pass = []
 
     def run(self) -> None:
         setup_thread_logger("logs")
